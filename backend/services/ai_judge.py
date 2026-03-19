@@ -24,10 +24,13 @@ def get_mock_score(player_id: str, prompt: str) -> AIScoreResponse:
         "Leonardo da Vinci is shaking right now. This is magnificent.",
         "It looks exactly like the prompt, if you squint and tilt your head."
     ]
+    raw_score = (rel * 2) + cre + cla + ent
+    total_score = int(raw_score * 2)  # Max 100
+
     return AIScoreResponse(
         submission_id=player_id, 
         scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
-        total_score=rel + cre + cla + ent,
+        total_score=total_score,
         comment=random.choice(comments)
     )
 
@@ -46,21 +49,22 @@ async def evaluate_single(player_id: str, prompt_text: str, b64_image: str) -> A
         img_data = base64.b64decode(b64_image)
         image_part = types.Part.from_bytes(data=img_data, mime_type="image/png")
         
-        instructions = f"""You are 'The Draw Judge', a playful, family-friendly, and slightly eccentric art critic for a multiplayer party game.
+        instructions = f"""You are 'The Draw Judge', a playful but strict art critic for a multiplayer party game.
 The drawing prompt was: "{prompt_text}"
 
 Review this player's drawing and score it out of 10 on the following metrics:
-1. prompt_relevance: Did the drawing match the prompt? (0-10)
-2. creativity: Did they add a funny or original twist? (0-10)
-3. clarity: Can you reasonably tell what it is? (0-10)
+1. prompt_relevance: Does the drawing actually depict "{prompt_text}"? (0-10). If it completely ignores the prompt or is just random scribbles, give a 0.
+2. creativity: Did they add a funny or original twist to the prompt? (0-10)
+3. clarity: Can you reasonably tell what it is without knowing the prompt? (0-10)
 4. entertainment: Is it amusing, charming, or surprisingly good/bad? (0-10)
+
+CRITICAL RULE: If the drawing is irrelevant to the prompt (prompt_relevance <= 3), you MUST heavily track down the other scores as well. An off-topic drawing should get a terrible total score, no matter how good it looks.
 
 Your overall tone should be lighthearted, funny, and NEVER insulting or mean.
 
 You MUST respond STRICTLY in JSON:
 {{
   "scores": {{ "prompt_relevance": 8, "creativity": 7, "clarity": 6, "entertainment": 9 }},
-  "total_score": 30,
   "comment": "Funny comment here!"
 }}"""
         
@@ -72,11 +76,30 @@ You MUST respond STRICTLY in JSON:
         )
         
         data = json.loads(response.text)
+        scores_dict = data.get("scores", {})
+        
+        # Ensure scores are integers
+        rel = int(scores_dict.get("prompt_relevance", 0))
+        cre = int(scores_dict.get("creativity", 0))
+        cla = int(scores_dict.get("clarity", 0))
+        ent = int(scores_dict.get("entertainment", 0))
+        
+        # Recalculate total_score to heavily emphasize prompt relevance
+        if rel <= 3:
+            # Massive penalty for entirely off-topic drawings
+            raw_score = (rel + cre + cla + ent) * 0.5
+        else:
+            # Relevance counts double to ensure the best ON TOPIC drawing wins
+            raw_score = (rel * 2) + cre + cla + ent
+            
+        # Scale to out of 100 (max raw_score is 50, so multiply by 2)
+        total_score = int(raw_score * 2)
+            
         return AIScoreResponse(
             submission_id=player_id,
-            scores=ScoreBreakdown(**data["scores"]),
-            total_score=data["total_score"],
-            comment=data["comment"]
+            scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
+            total_score=total_score,
+            comment=data.get("comment", "")
         )
     except Exception as e:
         print(f"Using mock AI judge for {player_id} (API key not provided or error: {e})")
