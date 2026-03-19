@@ -4,10 +4,10 @@ import asyncio
 import random
 import base64
 from typing import Dict, List
-from models.schemas import AIScoreResponse, ScoreBreakdown
+from models.schemas import AIScoreResponse, ScoreBreakdown # pyre-ignore
 
 try:
-    import google.generativeai as genai
+    import google.generativeai as genai # pyre-ignore
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
@@ -67,9 +67,7 @@ You MUST respond STRICTLY in JSON:
         response = await asyncio.to_thread(
             model.generate_content,
             contents=[instructions, image_parts[0]],
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-            )
+            generation_config={"response_mime_type": "application/json"}
         )
         
         data = json.loads(response.text)
