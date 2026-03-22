@@ -72,13 +72,16 @@ You MUST respond STRICTLY in JSON:
         
         response = await asyncio.to_thread(
             model.generate_content,
-            contents=[instructions, image_parts[0]],
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json"
-            )
+            contents=[instructions, image_parts[0]]
         )
         
-        data = json.loads(response.text)
+        text = response.text
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].strip()
+            
+        data = json.loads(text)
         scores_dict = data.get("scores", {})
         
         is_bad = data.get("is_scribble_or_blank", False)

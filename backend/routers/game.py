@@ -37,6 +37,8 @@ async def process_judging(room_code: str, room):
             "event": "ai_diagnostic",
             "message": ai_status_msg
         })
+        # Inform room to transition out of judging state to allow next rounds
+        room.status = "results"
                 
         # Broadcast results
         await manager.broadcast_to_room(room_code, {
