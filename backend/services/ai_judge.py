@@ -74,9 +74,9 @@ def extract_json(text: str) -> dict:
         # remove fenced code block if present
         lines = text.splitlines()
         if lines and lines[0].startswith("```"):
-            lines = lines[1:]
+            lines = lines[1:]  # type: ignore
         if lines and lines[-1].startswith("```"):
-            lines = lines[:-1]
+            lines = lines[:-1]  # type: ignore
         text = "\n".join(lines).strip()
 
     # Try direct parse first
@@ -89,9 +89,9 @@ def extract_json(text: str) -> dict:
     start = text.find("{")
     end = text.rfind("}")
     if start == -1 or end == -1 or end <= start:
-        raise ValueError(f"Model did not return valid JSON: {text[:300]}")
+        raise ValueError(f"Model did not return valid JSON: {text[:300]}")  # type: ignore
 
-    return json.loads(text[start:end + 1])
+    return json.loads(text[start:end + 1])  # type: ignore
 
 async def evaluate_single(player_id: str, prompt_text: str, b64_image: str) -> AIScoreResponse:
     try:
@@ -144,7 +144,7 @@ Comment must be short, funny, and family-friendly.
                 ],
             )
 
-        response = await asyncio.wait_for(asyncio.to_thread(_call_model), timeout=25)
+        response = await asyncio.wait_for(asyncio.to_thread(_call_model), timeout=25)  # type: ignore
         text = response.text or ""
         data = extract_json(text)
 
