@@ -4,11 +4,11 @@ import asyncio
 import random
 import base64
 from typing import Dict, List
-from models.schemas import AIScoreResponse, ScoreBreakdown # pyre-ignore
+import traceback
+from models.schemas import AIScoreResponse, ScoreBreakdown
 
 try:
-    from google import genai # pyre-ignore
-    from google.genai import types # pyre-ignore
+    import google.generativeai as genai
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
@@ -24,104 +24,75 @@ def get_mock_score(player_id: str, prompt: str) -> AIScoreResponse:
         "Leonardo da Vinci is shaking right now. This is magnificent.",
         "It looks exactly like the prompt, if you squint and tilt your head."
     ]
-    raw_score = (rel * 2) + cre + cla + ent
-    total_score = int(raw_score * 2)  # Max 100
-
     return AIScoreResponse(
         submission_id=player_id, 
         scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
-        total_score=total_score,
-        comment=random.choice(comments),
-        is_mock=True
+        total_score=rel + cre + cla + ent,
+        comment=random.choice(comments)
     )
 
 async def evaluate_single(player_id: str, prompt_text: str, b64_image: str) -> AIScoreResponse:
     try:
         api_key = os.environ.get("GEMINI_API_KEY")
         if not HAS_GENAI or not api_key:
+            print("No GEMINI_API_KEY found in environment variables. Falling back to mock.")
             raise ValueError("No Gemini API key found. Using mock fallback.")
             
-        client = genai.Client(api_key=api_key)
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
-        # Parse base64
         if "," in b64_image:
             b64_image = b64_image.split(",")[1]
             
         img_data = base64.b64decode(b64_image)
-        image_part = types.Part.from_bytes(data=img_data, mime_type="image/png")
+        image_parts = [{"mime_type": "image/png", "data": img_data}]
         
-        instructions = f"""You are 'The Draw Judge', a playful but strict art critic for a multiplayer party game.
+        instructions = f"""You are 'The Draw Judge', a playful, family-friendly, and slightly eccentric art critic for a multiplayer party game.
 The drawing prompt was: "{prompt_text}"
 
 Review this player's drawing and score it out of 10 on the following metrics:
-1. prompt_relevance: Does the drawing actually depict "{prompt_text}"? (0-10). If it completely ignores the prompt or is just random scribbles, give a 0.
-2. creativity: Did they add a funny or original twist to the prompt? (0-10)
-3. clarity: Can you reasonably tell what it is without knowing the prompt? (0-10)
+1. prompt_relevance: Did the drawing match the prompt? (0-10)
+2. creativity: Did they add a funny or original twist? (0-10)
+3. clarity: Can you reasonably tell what it is? (0-10)
 4. entertainment: Is it amusing, charming, or surprisingly good/bad? (0-10)
-
-CRITICAL RULE: If the drawing is irrelevant to the prompt (prompt_relevance <= 3), you MUST heavily track down the other scores as well. An off-topic drawing should get a terrible total score, no matter how good it looks.
 
 Your overall tone should be lighthearted, funny, and NEVER insulting or mean.
 
 You MUST respond STRICTLY in JSON:
 {{
   "scores": {{ "prompt_relevance": 8, "creativity": 7, "clarity": 6, "entertainment": 9 }},
+  "total_score": 30,
   "comment": "Funny comment here!"
 }}"""
         
         response = await asyncio.to_thread(
-            client.models.generate_content,
-            model='gemini-2.5-flash',
-            contents=[instructions, image_part],
-            config=types.GenerateContentConfig(response_mime_type="application/json")
+            model.generate_content,
+            contents=[instructions, image_parts[0]],
+            generation_config=genai.GenerationConfig(
+                response_mime_type="application/json"
+            )
         )
         
         data = json.loads(response.text)
-        scores_dict = data.get("scores", {})
-        
-        # Ensure scores are integers
-        rel = int(scores_dict.get("prompt_relevance", 0))
-        cre = int(scores_dict.get("creativity", 0))
-        cla = int(scores_dict.get("clarity", 0))
-        ent = int(scores_dict.get("entertainment", 0))
-        
-        # Recalculate total_score to heavily emphasize prompt relevance
-        if rel <= 3:
-            # Massive penalty for entirely off-topic drawings
-            raw_score = (rel + cre + cla + ent) * 0.5
-        else:
-            # Relevance counts double to ensure the best ON TOPIC drawing wins
-            raw_score = (rel * 2) + cre + cla + ent
-            
-        # Scale to out of 100 (max raw_score is 50, so multiply by 2)
-        total_score = int(raw_score * 2)
-            
         return AIScoreResponse(
             submission_id=player_id,
-            scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
-            total_score=total_score,
-            comment=data.get("comment", "")
+            scores=ScoreBreakdown(**data["scores"]),
+            total_score=data["total_score"],
+            comment=data["comment"]
         )
     except Exception as e:
-        print(f"Using mock AI judge for {player_id} (API key not provided or error: {e})")
-        await asyncio.sleep(2) # Fake processing delay
+        print(f"FAILED AI generation for {player_id}. Error: {e}")
+        traceback.print_exc()
+        await asyncio.sleep(2)
         return get_mock_score(player_id, prompt_text)
 
 async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> List[AIScoreResponse]:
-    """
-    Evaluates player drawings using Gemini.
-    `submissions` is a dict of player_id -> {"image": base64_image}
-    """
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt}")
-    
-    # Run evaluation concurrently for speed
     tasks = []
     for player_id, data in submissions.items():
         b64_img = data.get("image", "")
         tasks.append(evaluate_single(player_id, prompt, b64_img))
         
     results = list(await asyncio.gather(*tasks))
-    
-    # Sort highest score first to determine ranks
     results.sort(key=lambda x: x.total_score, reverse=True)
     return results
