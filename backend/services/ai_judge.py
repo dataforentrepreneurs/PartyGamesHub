@@ -64,6 +64,7 @@ Your comment should be funny, sarcastic, but family-friendly. Roast them slightl
 
 You MUST respond STRICTLY in JSON:
 {{
+  "is_scribble_or_blank": true,
   "scores": {{ "prompt_relevance": 2, "creativity": 3, "clarity": 1, "entertainment": 4 }},
   "total_score": 10,
   "comment": "Did you draw this with your eyes closed? It looks like a potato."
@@ -80,20 +81,19 @@ You MUST respond STRICTLY in JSON:
         data = json.loads(response.text)
         scores_dict = data.get("scores", {})
         
+        is_bad = data.get("is_scribble_or_blank", False)
         rel = int(scores_dict.get("prompt_relevance", 0))
         cre = int(scores_dict.get("creativity", 0))
         cla = int(scores_dict.get("clarity", 0))
         ent = int(scores_dict.get("entertainment", 0))
         
-        # Recalculate total_score to heavily emphasize prompt relevance
-        if rel <= 3:
-            raw_score = (rel + cre + cla + ent) * 0.5
+        if is_bad or rel <= 3:
+            # Force max 15 points if AI explicitly flags it as a scribble or off-topic
+            total_score = random.randint(0, 15)
         else:
-            # Relevance counts double to favor on-topic drawings. Max sum = 50.
+            # Scale normally for valid drawings
             raw_score = (rel * 2) + cre + cla + ent
-            
-        # Scale 0-50 raw score linearly to an out of 100 scale
-        total_score = min(100, int(raw_score * 2))
+            total_score = min(100, int(raw_score * 2))
         
         return AIScoreResponse(
             submission_id=player_id,

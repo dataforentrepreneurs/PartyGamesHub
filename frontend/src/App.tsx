@@ -72,6 +72,17 @@ function App() {
     const socket = new WebSocket(`${WS_BASE}/${code}?player_id=${playerId}&name=${encodeURIComponent(name)}`);
     ws.current = socket;
     
+    // Render/Heroku drop idle sockets after 60s. Heartbeat prevents this perfectly:
+    const pingInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ event: 'ping' }));
+      }
+    }, 30000);
+
+    socket.onclose = () => {
+       clearInterval(pingInterval);
+    };
+
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.event === 'room_state_update') {

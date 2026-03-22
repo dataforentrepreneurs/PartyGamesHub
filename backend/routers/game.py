@@ -83,6 +83,9 @@ async def websocket_endpoint(
             
             event = message.get("event")
             
+            if event == "ping":
+                continue
+                
             if event == "start_round":
                 if room.status in ["drawing", "judging"]:
                     continue
