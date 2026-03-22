@@ -4,5 +4,5 @@ websockets
 pydantic
 pydantic-core
 python-multipart
-google-generativeai
+google-genai
 python-dotenv

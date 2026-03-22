@@ -3,132 +3,202 @@ import json
 import asyncio
 import random
 import base64
-from typing import Dict, List
 import traceback
+from typing import Dict, List, Optional
+
 from models.schemas import AIScoreResponse, ScoreBreakdown  # type: ignore
 
 try:
-    import google.generativeai as genai  # type: ignore
+    from google import genai  # type: ignore
+    from google.genai import types # type: ignore
     HAS_GENAI = True
 except ImportError:
     HAS_GENAI = False
+
+_GEMINI_CLIENT: Optional["genai.Client"] = None
+
+def get_gemini_client():
+    global _GEMINI_CLIENT
+
+    if not HAS_GENAI:
+        raise ImportError("The 'google-genai' package is not installed. Failed to import.")
+
+    if _GEMINI_CLIENT is None:
+        api_key = os.environ.get("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("No Gemini API key found.")
+        _GEMINI_CLIENT = genai.Client(api_key=api_key)
+
+    return _GEMINI_CLIENT
+
+def get_model_name() -> str:
+    # Use 2.0-flash as the new standard default for the V2 SDK
+    return os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+
+def clamp_score(value: int) -> int:
+    return max(0, min(10, int(value)))
 
 def get_mock_score(player_id: str, prompt: str) -> AIScoreResponse:
     rel = random.randint(6, 10)
     cre = random.randint(5, 10)
     cla = random.randint(4, 10)
     ent = random.randint(7, 10)
+
     comments = [
         f"A deeply moving interpretation of '{prompt}'. The abstraction is wild!",
         "I'm slightly confused, but completely entertained. A bold choice.",
         "Leonardo da Vinci is shaking right now. This is magnificent.",
-        "It looks exactly like the prompt, if you squint and tilt your head."
+        "It looks exactly like the prompt, if you squint and tilt your head.",
     ]
+
     raw_score = (rel * 2) + cre + cla + ent
     total_score = min(100, int(raw_score * 2))
 
     return AIScoreResponse(
-        submission_id=player_id, 
-        scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
+        submission_id=player_id,
+        scores=ScoreBreakdown(
+            prompt_relevance=rel,
+            creativity=cre,
+            clarity=cla,
+            entertainment=ent,
+        ),
         total_score=total_score,
         comment=random.choice(comments),
-        is_mock=True
+        is_mock=True,
     )
+
+def extract_json(text: str) -> dict:
+    text = text.strip()
+
+    if text.startswith("```"):
+        # remove fenced code block if present
+        lines = text.splitlines()
+        if lines and lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        text = "\n".join(lines).strip()
+
+    # Try direct parse first
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+
+    # Fallback: extract first JSON object
+    start = text.find("{")
+    end = text.rfind("}")
+    if start == -1 or end == -1 or end <= start:
+        raise ValueError(f"Model did not return valid JSON: {text[:300]}")
+
+    return json.loads(text[start:end + 1])
 
 async def evaluate_single(player_id: str, prompt_text: str, b64_image: str) -> AIScoreResponse:
     try:
-        if not HAS_GENAI:
-            raise ImportError("CRITICAL: The 'google-generativeai' python package is missing from the container!")
-            
-        api_key = os.environ.get("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("No Gemini API key found. Using mock fallback.")
-            
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel('gemini-1.5-flash')
-        
+        client = get_gemini_client()
+        model_name = get_model_name()
+
         if "," in b64_image:
-            b64_image = b64_image.split(",")[1]
-            
+            b64_image = b64_image.split(",", 1)[1]
+
         img_data = base64.b64decode(b64_image)
-        image_parts = [{"mime_type": "image/png", "data": img_data}]
-        
-        instructions = f"""You are 'The Draw Judge', a ruthless but hilarious art critic for a multiplayer drawing game.
+
+        instructions = f"""
+You are 'The Draw Judge', a playful but strict art critic for a multiplayer drawing game.
+
 The drawing prompt was: "{prompt_text}"
 
-You must evaluate this player's drawing. DO NOT be overly generous. If the drawing is just a blank canvas, a minimal scribble, or completely ignores the prompt, you MUST give it VERY LOW scores (0 to 3)! Give high scores ONLY if it is a genuinely recognizable attempt at the prompt.
-Score out of 10 on these metrics:
-1. prompt_relevance: Does the drawing actually depict "{prompt_text}"? (0=No/Blank, 10=Perfectly)
-2. creativity: Did they add a funny or original twist? (0=Boring/Blank, 10=Genius)
-3. clarity: Can you reasonably tell what it is? (0=Unrecognizable scribble, 10=Very clear)
-4. entertainment: Is it amusing, charming, or surprisingly good/bad? (0=Boring, 10=Hilarious)
+Evaluate this player's drawing.
 
-Your comment should be funny, sarcastic, but family-friendly. Roast them slightly if the drawing is bad!
+Scoring rules:
+- If the drawing is blank, near-blank, random scribble, or ignores the prompt, score very low.
+- Give high scores only if it is a recognizable attempt at the prompt.
 
-You MUST respond STRICTLY in JSON:
+Return STRICT JSON only in this format:
 {{
   "is_scribble_or_blank": true,
-  "scores": {{ "prompt_relevance": 2, "creativity": 3, "clarity": 1, "entertainment": 4 }},
-  "total_score": 10,
+  "scores": {{
+    "prompt_relevance": 2,
+    "creativity": 3,
+    "clarity": 1,
+    "entertainment": 4
+  }},
   "comment": "Did you draw this with your eyes closed? It looks like a potato."
-}}"""
-        
-        response = await asyncio.to_thread(
-            model.generate_content,
-            contents=[instructions, image_parts[0]]
-        )
-        
-        text = response.text
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0].strip()
-        elif "```" in text:
-            text = text.split("```")[1].strip()
-            
-        data = json.loads(text)
+}}
+
+Score each field from 0 to 10:
+- prompt_relevance
+- creativity
+- clarity
+- entertainment
+
+Comment must be short, funny, and family-friendly.
+"""
+
+        def _call_model():
+            return client.models.generate_content(
+                model=model_name,
+                contents=[
+                    instructions,
+                    types.Part.from_bytes(data=img_data, mime_type="image/png"),
+                ],
+            )
+
+        response = await asyncio.wait_for(asyncio.to_thread(_call_model), timeout=25)
+        text = response.text or ""
+        data = extract_json(text)
+
         scores_dict = data.get("scores", {})
-        
-        is_bad = data.get("is_scribble_or_blank", False)
-        rel = int(scores_dict.get("prompt_relevance", 0))
-        cre = int(scores_dict.get("creativity", 0))
-        cla = int(scores_dict.get("clarity", 0))
-        ent = int(scores_dict.get("entertainment", 0))
-        
+        rel = clamp_score(scores_dict.get("prompt_relevance", 0))
+        cre = clamp_score(scores_dict.get("creativity", 0))
+        cla = clamp_score(scores_dict.get("clarity", 0))
+        ent = clamp_score(scores_dict.get("entertainment", 0))
+
+        is_bad = bool(data.get("is_scribble_or_blank", False))
+
         if is_bad or rel <= 3:
-            # Force max 15 points if AI explicitly flags it as a scribble or off-topic
             total_score = random.randint(0, 15)
         else:
-            # Scale normally for valid drawings
             raw_score = (rel * 2) + cre + cla + ent
             total_score = min(100, int(raw_score * 2))
-        
+
         return AIScoreResponse(
             submission_id=player_id,
-            scores=ScoreBreakdown(**scores_dict),
+            scores=ScoreBreakdown(
+                prompt_relevance=rel,
+                creativity=cre,
+                clarity=cla,
+                entertainment=ent,
+            ),
             total_score=total_score,
-            comment=data.get("comment", "")
+            comment=str(data.get("comment", "")).strip(),
+            is_mock=False,
         )
+
     except Exception as e:
-        import traceback
         error_msg = str(e) or type(e).__name__
         print(f"FAILED AI generation for {player_id}. Error: {error_msg}")
         traceback.print_exc()
-        await asyncio.sleep(2)
-        
+
+        await asyncio.sleep(1)
         mock_res = get_mock_score(player_id, prompt_text)
+
+        # Output the exact API error quietly in the mock string so we can debug live on Render if needed
         if "No Gemini API key found" in error_msg:
-            mock_res.comment = f"[🚨 NO API KEY ON SERVER] {mock_res.comment}"
+            mock_res.comment = f"[DEV: NO API KEY] {mock_res.comment}"
         else:
-            mock_res.comment = f"[🚨 API CRASH: {error_msg}] {mock_res.comment}"
-            
+            mock_res.comment = f"[DEV: AI ERROR - {error_msg}] {mock_res.comment}"
+
         return mock_res
 
 async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> List[AIScoreResponse]:
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt}")
+
     tasks = []
     for player_id, data in submissions.items():
         b64_img = data.get("image", "")
         tasks.append(evaluate_single(player_id, prompt, b64_img))
-        
+
     results = list(await asyncio.gather(*tasks))
     results.sort(key=lambda x: x.total_score, reverse=True)
     return results
