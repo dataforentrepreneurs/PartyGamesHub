@@ -31,7 +31,8 @@ def get_mock_score(player_id: str, prompt: str) -> AIScoreResponse:
         submission_id=player_id, 
         scores=ScoreBreakdown(prompt_relevance=rel, creativity=cre, clarity=cla, entertainment=ent),
         total_score=total_score,
-        comment=random.choice(comments)
+        comment=random.choice(comments),
+        is_mock=True
     )
 
 async def evaluate_single(player_id: str, prompt_text: str, b64_image: str) -> AIScoreResponse:
@@ -105,10 +106,19 @@ You MUST respond STRICTLY in JSON:
             comment=data.get("comment", "")
         )
     except Exception as e:
-        print(f"FAILED AI generation for {player_id}. Error: {e}")
+        import traceback
+        error_msg = str(e) or type(e).__name__
+        print(f"FAILED AI generation for {player_id}. Error: {error_msg}")
         traceback.print_exc()
         await asyncio.sleep(2)
-        return get_mock_score(player_id, prompt_text)
+        
+        mock_res = get_mock_score(player_id, prompt_text)
+        if "No Gemini API key found" in error_msg:
+            mock_res.comment = f"[🚨 NO API KEY ON SERVER] {mock_res.comment}"
+        else:
+            mock_res.comment = f"[🚨 API CRASH: {error_msg}] {mock_res.comment}"
+            
+        return mock_res
 
 async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> List[AIScoreResponse]:
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt}")
