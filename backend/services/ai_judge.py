@@ -145,14 +145,28 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         except Exception:
             continue
 
+    # models_to_try = [
+    #     os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
+    #     "gemini-3-flash-preview",
+    #     "gemini-3.1-flash-lite-preview",
+    #     "gemini-3.1-pro-preview",
+    #     "gemini-3-flash",
+    #     "gemini-3.1-flash-lite",
+    #     "gemini-3.1-pro"
+    # ]
+
     models_to_try = [
-        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
-        "gemini-3-flash-preview",
-        "gemini-3.1-flash-lite-preview",
+        # Check environment variable first
+        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"), 
+        
+        # 2026 Stable Models (GA)
+        "gemini-2.5-flash",          # Best balance of speed/cost for party games
+        "gemini-2.5-pro",            # High intelligence for complex drawings
+        
+        # 2026 Newest Previews (Require -preview suffix)
+        "gemini-3.1-flash-lite-preview", 
         "gemini-3.1-pro-preview",
-        "gemini-3-flash",
-        "gemini-3.1-flash-lite",
-        "gemini-3.1-pro"
+        "gemini-3-flash-preview"
     ]
     
     response = None
