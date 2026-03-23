@@ -146,11 +146,13 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
             continue
 
     models_to_try = [
-        os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"),
-        "gemini-1.5-pro-latest",
-        "gemini-1.5-flash-latest",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
+        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
+        "gemini-3-flash-preview",
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash",
+        "gemini-3.1-flash-lite",
+        "gemini-3.1-pro"
     ]
     
     response = None
@@ -160,9 +162,12 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         try:
             print(f"Attempting to evaluate batch using model: {model_name}")
             def _call_model():
-                return client.models.generate_content(
+                return client.models.generate_content(  # type: ignore
                     model=model_name,
                     contents=contents,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json"
+                    )
                 )
             
             # Using 45 timeout due to batch size requiring longer processing
