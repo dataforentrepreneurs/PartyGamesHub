@@ -21,5 +21,7 @@ class AIScoreResponse(BaseModel):
     comment: str
     is_mock: bool = False
 
-class AIBatchResponse(BaseModel):
+class BatchEvaluationResult(BaseModel):
     results: List[AIScoreResponse]
+    round_summary: str
+    winner_explanation: str

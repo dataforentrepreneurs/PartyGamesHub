@@ -18,10 +18,12 @@ async def test():
     test_batch = {
         "test_player": {"image": dummy_b64}
     }
-    results = await evaluate_submissions("Draw a completely terrible scribble", test_batch)
+    batch_result = await evaluate_submissions("Draw a completely terrible scribble", test_batch)
     
     print("AI Judge returned:")
-    for res in results:
+    print(f"Round Summary: {batch_result.round_summary}")
+    print(f"Winner Explanation: {batch_result.winner_explanation}")
+    for res in batch_result.results:
         print(res.model_dump())
     
 if __name__ == "__main__":

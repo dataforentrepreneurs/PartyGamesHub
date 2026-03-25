@@ -19,7 +19,8 @@ router = APIRouter(tags=["Game"])
 
 async def process_judging(room_code: str, room):
     try:
-        results = await evaluate_submissions(room.round_prompt, room.submissions)
+        eval_result = await evaluate_submissions(room.round_prompt, room.submissions)
+        results = eval_result.results
         # Update cumulative scores
         for res in results:
             pid = res.submission_id
@@ -52,6 +53,8 @@ async def process_judging(room_code: str, room):
         await manager.broadcast_to_room(room_code, {
             "event": "results_ready",
             "results": results_data,
+            "round_summary": eval_result.round_summary,
+            "winner_explanation": eval_result.winner_explanation,
             "leaderboard": room.players
         })
     except Exception as e:

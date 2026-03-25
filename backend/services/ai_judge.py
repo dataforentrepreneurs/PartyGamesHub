@@ -6,7 +6,7 @@ import base64
 import traceback
 from typing import Dict, List, Optional
 
-from models.schemas import AIScoreResponse, ScoreBreakdown  # type: ignore
+from models.schemas import AIScoreResponse, ScoreBreakdown, BatchEvaluationResult  # type: ignore
 
 try:
     from google import genai  # type: ignore
@@ -86,7 +86,7 @@ def extract_json(text: str) -> dict:
 
     return json.loads(text[start:end + 1])  # type: ignore
 
-async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> List[AIScoreResponse]:
+async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> BatchEvaluationResult:
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt} in a single batch request.")
     
     if not submissions:
@@ -117,6 +117,8 @@ Scoring & Persona rules:
 
 Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like this:
 {{
+  "round_summary": "One actual cat, two socks, and one existential crisis.",
+  "winner_explanation": "Player 1 won because it was the only one that didn't look like a potato.",
   "evaluations": [
     {{
       "submission_id": "player_1_id_here",
@@ -164,6 +166,7 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         # 2026 Stable Models (GA)
         "gemini-2.5-flash",          # Best balance of speed/cost for party games
         "gemini-2.5-pro",            # High intelligence for complex drawings
+        "gemini-3-flash", 
         
         # 2026 Newest Previews (Require -preview suffix)
         "gemini-3.1-flash-lite-preview", 
@@ -203,6 +206,8 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         data = extract_json(text)
         
         evaluations_list = data.get("evaluations", [])
+        round_summary = data.get("round_summary", "An indescribable round of chaos.")
+        winner_explanation = data.get("winner_explanation", "The winner won because the AI got lazy.")
         final_scores = []
         
         # Map back to models
@@ -244,7 +249,11 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
             final_scores.append(get_mock_score(missing_pid, prompt))
             
         final_scores.sort(key=lambda x: x.total_score, reverse=True)
-        return final_scores
+        return BatchEvaluationResult(
+            results=final_scores,
+            round_summary=round_summary,
+            winner_explanation=winner_explanation
+        )
 
     except Exception as e:
         error_msg = str(e) or type(e).__name__
@@ -252,7 +261,7 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         traceback.print_exc()
         return _fallback_all_to_mock(submissions, prompt, error_msg)
 
-def _fallback_all_to_mock(submissions: Dict[str, dict], prompt: str, error_msg: str) -> List[AIScoreResponse]:
+def _fallback_all_to_mock(submissions: Dict[str, dict], prompt: str, error_msg: str) -> BatchEvaluationResult:
     results = []
     for pid in submissions.keys():
         mock_res = get_mock_score(pid, prompt)
@@ -263,4 +272,11 @@ def _fallback_all_to_mock(submissions: Dict[str, dict], prompt: str, error_msg: 
         results.append(mock_res)
         
     results.sort(key=lambda x: x.total_score, reverse=True)
-    return results
+    
+    mock_reason = "No API Key provided" if "API key" in error_msg else "API Error"
+    
+    return BatchEvaluationResult(
+        results=results,
+        round_summary=f"The judge was asleep ({mock_reason}). Everyone gets arbitrary mock scores!",
+        winner_explanation="The winner probably bribed the mock AI judge."
+    )
