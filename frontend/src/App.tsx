@@ -66,6 +66,7 @@ function App() {
   const [winnerExplanation, setWinnerExplanation] = useState('');
   const [currentRound, setCurrentRound] = useState(0);
   const [maxRounds, setMaxRounds] = useState(10);
+  const [submissionCount, setSubmissionCount] = useState(0);
   const [roundDeltas, setRoundDeltas] = useState<Record<string, number>>({});
   const [selectedPlayerHistory, setSelectedPlayerHistory] = useState<any[] | null>(null);
   const [selectedPlayerName, setSelectedPlayerName] = useState<string>('');
@@ -105,6 +106,7 @@ function App() {
         setTimeLeft(data.duration_seconds || 60);
         if (data.current_round !== undefined) setCurrentRound(data.current_round);
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
+        setSubmissionCount(0);
         setView('drawing');
       } else if (data.event === 'judging_started') {
         setView('judging');
@@ -133,6 +135,8 @@ function App() {
         setView('results');
       } else if (data.event === 'player_history') {
         setSelectedPlayerHistory(data.history);
+      } else if (data.event === 'submission_count_update') {
+        setSubmissionCount(data.count);
       }
     };
   }
@@ -183,7 +187,7 @@ function App() {
   };
 
   return (
-    <div className={(view === 'results' || view === 'hostLobby') && isHostUser ? "w-full max-w-6xl px-4" : "max-w-md w-full"}>
+    <div className={isHostUser ? "w-full max-w-6xl px-4" : "max-w-md w-full"}>
       {view === 'landing' && (
         <div className="flex-col animate-float">
           <div className="text-center mb-8 ">
@@ -257,7 +261,25 @@ function App() {
         </div>
       )}
 
-      {view === 'drawing' && (<DrawCanvas onSubmit={handleDrawSubmit} prompt={prompt} timeLeft={timeLeft} mode={gameMode} />)}
+      {view === 'drawing' && (
+        isHostUser ? (
+          <div className="glass-panel text-center animate-slide-up" style={{ padding: '48px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
+            <h2 className={`title-giant mb-4 ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{ fontSize: '4rem', textShadow: '0 0 20px hsla(320,90%,65%,0.3)' }}>
+              {timeLeft}s
+            </h2>
+            <p className="subtitle mb-8" style={{ fontSize: '2.5rem', color: 'white', fontWeight: 800 }}>
+              Prompt: "{gameMode === 'blind' ? '???' : prompt}"
+            </p>
+            <div className="mb-8 p-6" style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '24px', border: '2px solid hsla(0,0%,100%,0.2)' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', marginBottom: '8px' }}>RECEIVED</h3>
+                <h1 style={{ fontSize: '5rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{submissionCount} / {players.length}</h1>
+            </div>
+            <p className="subtitle" style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Look at your phone to draw!</p>
+          </div>
+        ) : (
+          <DrawCanvas onSubmit={handleDrawSubmit} prompt={prompt} timeLeft={timeLeft} mode={gameMode} />
+        )
+      )}
 
       {view === 'judging' && (
         <div className="flex-col items-center justify-center h-full text-center">
@@ -290,7 +312,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', flex: 1, minHeight: 0 }}>
                 {results[0]?.image && (
                   <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 0 }}>
-                    <img src={results[0].image} alt="Winner Drawing" style={{ width: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '12px', background: '#fff' }} />
+                    <img src={results[0].image} alt="Winner Drawing" style={{ width: '100%', maxWidth: '350px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }} />
                   </div>
                 )}
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', paddingRight: '8px', textAlign: 'left' }}>
@@ -325,7 +347,7 @@ function App() {
                 const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
                 return (
                   <div key={i} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
-                    {r.image && <img src={r.image} alt="Drawing" style={{ width: '100px', height: '100px', objectFit: 'contain', borderRadius: '8px', background: 'transparent' }} />}
+                    {r.image && <img src={r.image} alt="Drawing" style={{ width: '80px', height: 'auto', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '8px', background: '#1a1f33', border: '1px solid hsla(0,0%,100%,0.2)' }} />}
                     <div style={{ flex: 1, textAlign: 'left' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>{player.name}</h4>
@@ -378,7 +400,9 @@ function App() {
                     <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '16px' }}>
                       Your Placement: #{myRank + 1}
                     </h3>
-                    {myRes.image && <img src={myRes.image} alt="Your Drawing" style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '12px', marginBottom: '20px', background: 'transparent' }} />}
+                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        {myRes.image && <img src={myRes.image} alt="Your Drawing" style={{ width: '100%', maxWidth: '320px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', marginBottom: '20px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)' }} />}
+                    </div>
                     <div className="flex-row justify-between mb-4">
                       <h3 className="text-primary" style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{myRes.total_score} pts</h3>
                     </div>
@@ -410,7 +434,9 @@ function App() {
                     <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '12px', color: i === 0 ? 'var(--primary)' : 'white' }}>
                       {i + 1}. {player.name}
                     </h4>
-                    {r.image && <img src={r.image} alt="Drawing" style={{ maxWidth: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '8px', marginBottom: '12px', background: 'transparent' }} />}
+                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                        {r.image && <img src={r.image} alt="Drawing" style={{ width: '100%', maxWidth: '320px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', marginBottom: '12px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)' }} />}
+                    </div>
                     <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{r.total_score} pts</h4>
 
                     {r.scores && (
@@ -509,7 +535,7 @@ function App() {
                      {selectedPlayerHistory.map((item, idx) => (
                          <div key={idx} className="glass-panel" style={{ minWidth: '320px', flex: '0 0 auto', padding: '16px', display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.5)' }}>
                              <h4 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'white' }}>Round {item.round}: {item.prompt}</h4>
-                             {item.image && <img src={item.image} alt="Drawing" style={{ maxWidth: '100%', maxHeight: '250px', objectFit: 'contain', background: 'transparent', borderRadius: '8px', marginBottom: '12px', alignSelf: 'center' }} />}
+                             {item.image && <img src={item.image} alt="Drawing" style={{ width: '100%', maxWidth: '280px', aspectRatio: '3/4', objectFit: 'contain', background: '#1a1f33', borderRadius: '16px', border: '2px solid hsla(0,0%,100%,0.2)', marginBottom: '12px', alignSelf: 'center' }} />}
                              <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{item.total_score} pts</h4>
                              <div style={{ fontStyle: 'italic', fontSize: '1rem', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px', flex: 1 }}>"{item.comment}"</div>
                          </div>
@@ -530,7 +556,7 @@ function App() {
                          {selectedPlayerHistory.map((item, idx) => (
                              <div key={idx} className="glass-panel flex-col text-left" style={{ padding: '20px' }}>
                                  <h4 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'white' }}>Round {item.round}: {item.prompt}</h4>
-                                 {item.image && <img src={item.image} alt="Drawing" style={{ maxWidth: '100%', maxHeight: '250px', objectFit: 'contain', background: 'transparent', borderRadius: '8px', marginBottom: '12px', alignSelf: 'center' }} />}
+                                 {item.image && <img src={item.image} alt="Drawing" style={{ width: '100%', maxWidth: '250px', aspectRatio: '3/4', objectFit: 'contain', background: '#1a1f33', borderRadius: '16px', border: '2px solid hsla(0,0%,100%,0.2)', marginBottom: '12px', alignSelf: 'center' }} />}
                                  <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{item.total_score} pts</h4>
                                  
                                  {item.scores && (

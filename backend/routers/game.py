@@ -96,7 +96,8 @@ async def websocket_endpoint(
         return
 
     # Add player if not exists
-    if player_id not in room.players:
+    # The host should sit in "Projector Mode", not directly as a competitive player
+    if player_id not in room.players and player_id != room.host_id:
         room.players[player_id] = {"name": name, "score": 0}
 
     await manager.connect(room_code, player_id, websocket)
@@ -179,8 +180,14 @@ async def websocket_endpoint(
                 if image_data:
                     room.add_submission(player_id, image_data)
                     
+                    await manager.broadcast_to_room(room_code, {
+                        "event": "submission_count_update",
+                        "count": len(room.submissions),
+                        "total": len(room.players)
+                    })
+                    
                     # If all players have submitted
-                    if len(room.submissions) >= len(room.players):
+                    if len(room.submissions) >= len(room.players) and len(room.players) > 0:
                         room.status = "judging"
                         await manager.broadcast_to_room(room_code, {
                             "event": "judging_started"
