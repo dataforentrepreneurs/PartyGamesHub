@@ -1,6 +1,55 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Eraser, RotateCcw, Trash2, Send } from 'lucide-react';
 
+const trimCanvas = (canvas: HTMLCanvasElement): string => {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return canvas.toDataURL('image/png');
+  
+  const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const l = pixels.data.length;
+  let bound = { top: null as number | null, left: null as number | null, right: null as number | null, bottom: null as number | null };
+  
+  for (let i = 0; i < l; i += 4) {
+    // The default canvas background is #1a1f33 which equals rgb(26, 31, 51)
+    // Using a tolerance to account for anti-aliasing and JS color profile blending
+    if (pixels.data[i] > 40 || pixels.data[i+1] > 45 || pixels.data[i+2] > 70) { 
+      const x = (i / 4) % canvas.width;
+      const y = ~~((i / 4) / canvas.width);
+      
+      if (bound.top === null) bound.top = y;
+      if (bound.left === null || x < bound.left) bound.left = x;
+      if (bound.right === null || x > bound.right) bound.right = x;
+      if (bound.bottom === null || y > bound.bottom) bound.bottom = y;
+    }
+  }
+  
+  if (bound.top === null || bound.left === null || bound.right === null || bound.bottom === null) {
+    return canvas.toDataURL('image/png'); // Blank canvas
+  }
+  
+  // Apply a 30px padding for aesthetics
+  const padding = 30;
+  bound.top = Math.max(0, bound.top - padding);
+  bound.left = Math.max(0, bound.left - padding);
+  bound.right = Math.min(canvas.width, bound.right + padding);
+  bound.bottom = Math.min(canvas.height, bound.bottom + padding);
+  
+  const trimWidth = bound.right - bound.left;
+  const trimHeight = bound.bottom - bound.top;
+  
+  const trimmed = document.createElement('canvas');
+  trimmed.width = trimWidth;
+  trimmed.height = trimHeight;
+  const tCtx = trimmed.getContext('2d');
+  if (tCtx) {
+    tCtx.fillStyle = '#1a1f33'; 
+    tCtx.fillRect(0, 0, trimWidth, trimHeight);
+    tCtx.putImageData(ctx.getImageData(bound.left, bound.top, trimWidth, trimHeight), 0, 0);
+  }
+  
+  return trimmed.toDataURL('image/jpeg', 0.9);
+};
+
 interface DrawCanvasProps {
   onSubmit: (dataUrl: string) => void;
   prompt: string;
@@ -24,7 +73,7 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
   useEffect(() => {
     if (timeLeft === 0 && !hasSubmitted) {
       setHasSubmitted(true);
-      if (canvasRef.current) onSubmit(canvasRef.current.toDataURL('image/png'));
+      if (canvasRef.current) onSubmit(trimCanvas(canvasRef.current));
     }
   }, [timeLeft, hasSubmitted, onSubmit]);
 
@@ -106,7 +155,7 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
   }, [paths, currentPath]);
 
   const handleSubmit = () => {
-    if (canvasRef.current) onSubmit(canvasRef.current.toDataURL('image/png'));
+    if (canvasRef.current) onSubmit(trimCanvas(canvasRef.current));
   };
 
   useEffect(() => {

@@ -21,11 +21,16 @@ async def process_judging(room_code: str, room):
     try:
         eval_result = await evaluate_submissions(room.round_prompt, room.submissions)
         results = eval_result.results
+        
+        # Reset deltas for this round
+        room.last_round_deltas = {}
+        
         # Update cumulative scores
         for res in results:
             pid = res.submission_id
             if pid in room.players:
                 room.players[pid]["score"] += res.total_score
+                room.last_round_deltas[pid] = res.total_score
                 
         # Notify host if mock AI was used
         any_mock = any(res.is_mock for res in results)
@@ -46,8 +51,19 @@ async def process_judging(room_code: str, room):
         for r in results:
             item = r.model_dump() if hasattr(r, "model_dump") else r.dict()
             sub_data = room.submissions.get(r.submission_id, {})
-            item["image"] = sub_data.get("image", "") if isinstance(sub_data, dict) else ""
+            img = sub_data.get("image", "") if isinstance(sub_data, dict) else ""
+            item["image"] = img
             results_data.append(item)
+            
+            # Store history
+            room.player_history.setdefault(r.submission_id, []).append({
+                "round": room.current_round,
+                "prompt": room.round_prompt,
+                "image": img,
+                "total_score": r.total_score,
+                "comment": r.comment,
+                "scores": r.scores.model_dump() if hasattr(r.scores, "model_dump") else r.scores.dict()
+            })
             
         # Broadcast results
         await manager.broadcast_to_room(room_code, {
@@ -55,7 +71,10 @@ async def process_judging(room_code: str, room):
             "results": results_data,
             "round_summary": eval_result.round_summary,
             "winner_explanation": eval_result.winner_explanation,
-            "leaderboard": room.players
+            "leaderboard": room.players,
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds,
+            "round_deltas": room.last_round_deltas
         })
     except Exception as e:
         print(f"Error during AI judging flow: {e}")
@@ -86,7 +105,9 @@ async def websocket_endpoint(
     await manager.broadcast_to_room(room_code, {
         "event": "room_state_update",
         "status": room.status,
-        "players": room.players
+        "players": room.players,
+        "current_round": room.current_round,
+        "max_rounds": room.max_rounds
     })
 
     try:
@@ -114,8 +135,44 @@ async def websocket_endpoint(
                     "event": "round_started",
                     "prompt": room.round_prompt,
                     "mode": room.game_mode,
-                    "duration_seconds": duration
+                    "duration_seconds": duration,
+                    "current_round": room.current_round,
+                    "max_rounds": room.max_rounds
                 })
+                
+            elif event == "update_settings":
+                if player_id == room.host_id:
+                    new_max = message.get("max_rounds")
+                    if new_max is not None:
+                        room.max_rounds = max(1, int(new_max))
+                        await manager.broadcast_to_room(room_code, {
+                            "event": "room_state_update",
+                            "status": room.status,
+                            "players": room.players,
+                            "current_round": room.current_round,
+                            "max_rounds": room.max_rounds
+                        })
+                        
+            elif event == "return_to_lobby":
+                if player_id == room.host_id:
+                    room.reset_game()
+                    await manager.broadcast_to_room(room_code, {
+                        "event": "room_state_update",
+                        "status": room.status,
+                        "players": room.players,
+                        "current_round": room.current_round,
+                        "max_rounds": room.max_rounds
+                    })
+                    
+            elif event == "get_player_history":
+                target_pid = message.get("player_id")
+                if target_pid:
+                    history = room.player_history.get(target_pid, [])
+                    await websocket.send_text(json.dumps({
+                        "event": "player_history",
+                        "player_id": target_pid,
+                        "history": history
+                    }))
                 
             elif event == "submit_drawing":
                 image_data = message.get("image_data") # Base64 string
@@ -149,5 +206,7 @@ async def websocket_endpoint(
         await manager.broadcast_to_room(room_code, {
             "event": "room_state_update",
             "status": room.status,
-            "players": room.players
+            "players": room.players,
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds
         })
