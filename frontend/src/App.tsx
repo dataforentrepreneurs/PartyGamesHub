@@ -157,7 +157,11 @@ function App() {
       return () => clearTimeout(timer);
     }
     if (view === 'drawing' && timeLeft === 0 && isHostUser && ws.current) {
-       ws.current.send(JSON.stringify({ event: 'force_judging' }));
+       // Allow mobile clients a brief 3-second grace period to finish and upload their auto-submitted Canvas JPEGs
+       const overrideTimer = setTimeout(() => {
+           ws.current?.send(JSON.stringify({ event: 'force_judging' }));
+       }, 3000);
+       return () => clearTimeout(overrideTimer);
     }
   }, [view, timeLeft, isHostUser]);
 
@@ -531,8 +535,8 @@ function App() {
               </div>
             ))}
           </div>
-          {/* Navigation for Players */}
-          {!isHostUser && currentRound < maxRounds && (
+          {/* Navigation for Players & Hosts */}
+          {currentRound < maxRounds && (
               <button className="btn-secondary w-full mb-4" onClick={() => setView('results')}>🔙 Back to Results</button>
           )}
 
