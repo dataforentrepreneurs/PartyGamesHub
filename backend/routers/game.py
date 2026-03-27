@@ -83,7 +83,14 @@ async def process_judging(room_code: str, room):
             "round_deltas": room.last_round_deltas
         })
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Error during AI judging flow: {e}")
+        room.status = "results"
+        await manager.send_to_player(room_code, room.host_id, {
+            "event": "ai_diagnostic",
+            "message": f"Judging crashed internally: {e}"
+        })
 
 router = APIRouter(tags=["Game"])
 

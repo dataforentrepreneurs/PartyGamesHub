@@ -90,7 +90,11 @@ async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> Bat
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt} in a single batch request.")
     
     if not submissions:
-        return []
+        return BatchEvaluationResult(
+            results=[],
+            round_summary="Nobody drew anything. Is this an art strike?",
+            winner_explanation="Nobody wins, because nobody played."
+        )
 
     client = None
     try:
@@ -161,7 +165,17 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
 
     models_to_try = [
         # Check environment variable first
-        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
+       
+        # 2026 Stable Models (GA)
+        "gemini-2.5-flash",          # Best balance of speed/cost for party games
+        "gemini-2.5-pro",            # High intelligence for complex drawings
+        "gemini-3-flash",
+       
+        # 2026 Newest Previews (Require -preview suffix)
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-3-flash-preview"
     ]
     
     response = None
