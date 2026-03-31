@@ -120,17 +120,17 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
   }, []);
 
   return (
-    <div className="flex-col w-full h-full max-w-md">
-      <div className="glass-panel text-center mb-4" style={{padding: '16px'}}>
-        <h3 className={`title-giant ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{fontSize: '1.5rem', marginBottom: '8px'}}>
+    <div className="no-scroll-mobile max-w-md" style={{ gap: '8px', paddingBottom: '8px' }}>
+      <div className="glass-panel text-center flex-none" style={{padding: '12px'}}>
+        <h3 className={`title-giant ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{fontSize: '1.25rem', marginBottom: '4px', lineHeight: 1}}>
           {timeLeft}s
         </h3>
-        <p className="subtitle" style={{margin: '0', color: 'white', fontWeight: 600}}>
+        <p className="subtitle" style={{margin: '0', color: 'white', fontWeight: 600, fontSize: '0.95rem', lineHeight: 1.2}}>
           "{blindHidden ? '???' : prompt}"
         </p>
       </div>
 
-      <div style={{position: 'relative', width: '100%', aspectRatio: '3/4', borderRadius: '16px', overflow: 'hidden', border: '2px solid hsla(0,0%,100%,0.2)'}}>
+      <div style={{position: 'relative', width: '100%', flex: 1, minHeight: 0, borderRadius: '16px', overflow: 'hidden', border: '2px solid hsla(0,0%,100%,0.2)'}}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           fontSize: 'clamp(5rem, 30vw, 15rem)', fontWeight: 900, 
@@ -150,15 +150,15 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
         />
       </div>
 
-      <div className="flex-row justify-between mb-4 mt-4 glass-panel" style={{padding: '16px', borderRadius: '16px'}}>
-        <button className={`btn-secondary ${!eraserMode ? 'text-primary' : ''}`} style={{width: 'auto', padding: '12px'}} onClick={() => setEraserMode(false)}>Pen</button>
-        <button className={`btn-secondary ${eraserMode ? 'text-primary' : ''}`} style={{width: 'auto', padding: '12px'}} onClick={() => setEraserMode(true)}><Eraser size={20} /></button>
-        <button className="btn-secondary" style={{width: 'auto', padding: '12px'}} onClick={() => setPaths(prev => prev.slice(0, -1))} disabled={paths.length === 0}><RotateCcw size={20} /></button>
-        <button className="btn-secondary" style={{width: 'auto', padding: '12px'}} onClick={() => setPaths([])}><Trash2 size={20} /></button>
+      <div className="flex-row justify-between flex-none glass-panel" style={{padding: '8px', borderRadius: '16px', gap: '8px'}}>
+        <button className={`btn-secondary ${!eraserMode ? 'text-primary' : ''}`} style={{padding: '8px', flex: 1}} onClick={() => setEraserMode(false)}>Pen</button>
+        <button className={`btn-secondary ${eraserMode ? 'text-primary' : ''}`} style={{padding: '8px', flex: 1}} onClick={() => setEraserMode(true)}><Eraser size={20} /></button>
+        <button className="btn-secondary" style={{padding: '8px', flex: 1}} onClick={() => setPaths(prev => prev.slice(0, -1))} disabled={paths.length === 0}><RotateCcw size={20} /></button>
+        <button className="btn-secondary" style={{padding: '8px', flex: 1}} onClick={() => setPaths([])}><Trash2 size={20} /></button>
       </div>
 
-      <button className="btn-primary" onClick={handleSubmit}>
-        <Send size={24} /> Submit Art
+      <button className="btn-primary flex-none" style={{padding: '14px', fontSize: '1.2rem'}} onClick={handleSubmit}>
+        <Send size={20} /> Submit Art
       </button>
     </div>
   );

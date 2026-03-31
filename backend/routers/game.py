@@ -9,19 +9,18 @@ import os
 import random
 import time
 
-# Load Prompts Library
-PROMPTS_LIB = []
-try:
-    with open(os.path.join(os.path.dirname(__file__), '..', 'data', 'prompts.json')) as f:
-        PROMPTS_LIB = json.load(f).get("prompts", ["Draw a flying cat wearing sunglasses"])
-except Exception:
-    PROMPTS_LIB = ["Draw a flying cat wearing sunglasses"]
+FALLBACK_PROMPTS = {
+    "Family": ["A dog flying a kite", "A friendly monster baking cookies", "A penguin on vacation"],
+    "Kids": ["A superhero duck", "A pizza with eyeballs", "A magic treehouse"],
+    "Couples": ["Arguing over the TV remote", "Who forgot to take out the trash", "Stealing the blankets"],
+    "Office": ["The printer is jammed again", "Zoom call in pajamas", "Someone stole my lunch"]
+}
 
 router = APIRouter(tags=["Game"])
 
 async def process_judging(room_code: str, room):
     try:
-        eval_result = await evaluate_submissions(room.round_prompt, room.submissions)
+        eval_result = await evaluate_submissions(room.round_prompt, room.submissions, room.theme)
         results = eval_result.results
         
         # Reset deltas for this round
@@ -127,6 +126,7 @@ async def websocket_endpoint(
         "max_rounds": room.max_rounds,
         "prompt": room.round_prompt,
         "mode": room.game_mode,
+        "theme": room.theme,
         "host_id": room.host_id,
         "time_left": time_left
     })
@@ -145,8 +145,9 @@ async def websocket_endpoint(
                     continue
                 mode = message.get("mode", "classic")
                 
-                ai_prompt = await generate_creative_prompt()
-                selected_prompt = ai_prompt if ai_prompt else random.choice(PROMPTS_LIB)
+                ai_prompt = await generate_creative_prompt(room.theme)
+                fallback_list = FALLBACK_PROMPTS.get(room.theme, FALLBACK_PROMPTS["Family"])
+                selected_prompt = ai_prompt if ai_prompt else random.choice(fallback_list)
                 
                 duration = 60
                 if mode == "speed":
@@ -166,19 +167,24 @@ async def websocket_endpoint(
             elif event == "update_settings":
                 if player_id == room.host_id:
                     new_max = message.get("max_rounds")
+                    new_theme = message.get("theme")
                     if new_max is not None:
                         room.max_rounds = max(1, int(new_max))
-                        await manager.broadcast_to_room(room_code, {
-                            "event": "room_state_update",
-                            "status": room.status,
-                            "players": room.players,
-                            "current_round": room.current_round,
-                            "max_rounds": room.max_rounds,
-                            "prompt": room.round_prompt,
-                            "mode": room.game_mode,
-                            "host_id": room.host_id,
-                            "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
-                        })
+                    if new_theme is not None:
+                        room.theme = new_theme
+                        
+                    await manager.broadcast_to_room(room_code, {
+                        "event": "room_state_update",
+                        "status": room.status,
+                        "players": room.players,
+                        "current_round": room.current_round,
+                        "max_rounds": room.max_rounds,
+                        "prompt": room.round_prompt,
+                        "mode": room.game_mode,
+                        "theme": room.theme,
+                        "host_id": room.host_id,
+                        "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
+                    })
                         
             elif event == "return_to_lobby":
                 if player_id == room.host_id:
@@ -191,6 +197,7 @@ async def websocket_endpoint(
                         "max_rounds": room.max_rounds,
                         "prompt": room.round_prompt,
                         "mode": room.game_mode,
+                        "theme": room.theme,
                         "host_id": room.host_id,
                         "time_left": 0
                     })
@@ -255,6 +262,7 @@ async def websocket_endpoint(
             "max_rounds": room.max_rounds,
             "prompt": room.round_prompt,
             "mode": room.game_mode,
+            "theme": room.theme,
             "host_id": room.host_id,
             "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
         })

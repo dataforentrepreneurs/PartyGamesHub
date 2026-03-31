@@ -60,6 +60,7 @@ function App() {
   const [players, setPlayers] = useState<{ id?: string, name: string, score: number }[]>([]);
   const [prompt, setPrompt] = useState('');
   const [gameMode, setGameMode] = useState('classic');
+  const [theme, setTheme] = useState('Family');
   const [hostSelectedMode, setHostSelectedMode] = useState('classic');
   const [timeLeft, setTimeLeft] = useState(60);
   const [results, setResults] = useState<any[]>([]);
@@ -118,6 +119,7 @@ function App() {
         setPlayers(playerList);
         if (data.current_round !== undefined) setCurrentRound(data.current_round);
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
+        if (data.theme !== undefined) setTheme(data.theme);
         
         if (data.status === 'waiting') {
             setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
@@ -320,11 +322,22 @@ function App() {
             </div>
           </div>
 
-          <div className="flex-col w-full mb-8 pt-4" style={{ borderTop: '1px solid hsla(0,0%,100%,0.1)' }}>
-            <p className="subtitle" style={{ marginBottom: '8px', fontSize: '0.9rem' }}>PROMPT PACKS</p>
-            <button className="btn-secondary" style={{ padding: '8px', fontSize: '1rem' }}>Standard Library (Free)</button>
-            <button className="btn-secondary" style={{ padding: '8px', fontSize: '1rem', opacity: 0.5 }} disabled>NSFW Pack (DLC 🔒)</button>
-            <button className="btn-secondary" style={{ padding: '8px', fontSize: '1rem', opacity: 0.5 }} disabled>Office Jobs (DLC 🔒)</button>
+          <div className="flex-row w-full mb-8" style={{ gap: '16px' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', marginBottom: '4px', textAlign: 'left' }}>THEME / PROMPT DECK</label>
+                <select className="input-field" value={theme} onChange={e => {
+                  const val = e.target.value;
+                  setTheme(val);
+                  if (ws.current) {
+                     ws.current.send(JSON.stringify({ event: 'update_settings', theme: val }));
+                  }
+                }} style={{ fontSize: '1rem', padding: '12px' }}>
+                    <option value="Family">🏡 Family Friendly</option>
+                    <option value="Kids">🧸 Kids & Silly</option>
+                    <option value="Couples">💔 Couples Arguments</option>
+                    <option value="Office">👔 Office Chaos</option>
+                </select>
+            </div>
           </div>
 
           <div className="w-full text-center mb-8">
@@ -346,18 +359,33 @@ function App() {
 
       {view === 'drawing' && (
         isHostUser ? (
-          <div className="glass-panel text-center animate-slide-up" style={{ padding: '48px', maxWidth: '800px', width: '100%', margin: '0 auto' }}>
-            <h2 className={`title-giant mb-4 ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{ fontSize: '4rem', textShadow: '0 0 20px hsla(320,90%,65%,0.3)' }}>
-              {timeLeft}s
-            </h2>
-            <p className="subtitle mb-8" style={{ fontSize: '2.5rem', color: 'white', fontWeight: 800 }}>
-              Prompt: "{gameMode === 'blind' ? '???' : prompt}"
-            </p>
-            <div className="mb-8 p-6" style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '24px', border: '2px solid hsla(0,0%,100%,0.2)' }}>
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', marginBottom: '8px' }}>RECEIVED</h3>
-                <h1 style={{ fontSize: '5rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{submissionCount} / {players.length}</h1>
+          <div className="dashboard-layout animate-slide-up">
+            <div className="dashboard-main justify-center items-center">
+              <div className="glass-panel text-center w-full" style={{ padding: '48px', maxWidth: '800px', margin: 'auto' }}>
+                <h2 className={`title-giant mb-4 ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{ fontSize: '4rem', textShadow: '0 0 20px hsla(320,90%,65%,0.3)' }}>
+                  {timeLeft}s
+                </h2>
+                <p className="subtitle mb-8" style={{ fontSize: '2.5rem', color: 'white', fontWeight: 800 }}>
+                  Prompt: "{gameMode === 'blind' ? '???' : prompt}"
+                </p>
+                <div className="mb-8 p-6" style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '24px', border: '2px solid hsla(0,0%,100%,0.2)' }}>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', marginBottom: '8px' }}>RECEIVED</h3>
+                    <h1 style={{ fontSize: '5rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{submissionCount} / {players.length}</h1>
+                </div>
+                <p className="subtitle" style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Look at your phones to draw!</p>
+              </div>
             </div>
-            <p className="subtitle" style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Look at your phone to draw!</p>
+            <div className="dashboard-sidebar">
+               <h3 className="text-center" style={{fontSize: '1.5rem', fontWeight: 'bold', color: 'white'}}>PLAYERS ({players.length})</h3>
+               <div className="flex-col" style={{gap: '8px'}}>
+                 {players.map((p, i) => (
+                    <div key={i} className="glass-panel" style={{padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.5)'}}>
+                        <span style={{fontWeight: 'bold', fontSize: '1.2rem'}}>{p.name}</span>
+                        <span className="text-primary" style={{fontWeight: 'bold'}}>{p.score} pts</span>
+                    </div>
+                 ))}
+               </div>
+            </div>
           </div>
         ) : (
           <DrawCanvas onSubmit={handleDrawSubmit} prompt={prompt} timeLeft={timeLeft} mode={gameMode} />
@@ -543,19 +571,70 @@ function App() {
       )}
 
       {view === 'leaderboard' && (
-        <div className="glass-panel flex-col w-full text-center animate-slide-up" style={{ position: 'relative' }}>
-          {isHostUser && currentRound < maxRounds && (
-            <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-               <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)' }}>MAX ROUNDS:</label>
-               <input type="number" min="1" max="50" className="input-field" value={maxRounds} onChange={e => {
-                  const val = parseInt(e.target.value);
-                  if (!isNaN(val) && ws.current) {
-                     ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: val }));
-                  }
-               }} style={{ width: '80px', padding: '6px', fontSize: '1rem' }} />
-            </div>
-          )}
+        isHostUser ? (
+          <div className="dashboard-layout animate-slide-up">
+            <div className="dashboard-main glass-panel text-center">
+              <Trophy size={48} className="text-primary mb-4 w-full" style={{ margin: '0 auto' }} />
+              <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
+                {currentRound >= maxRounds ? "FINAL RESULTS" : "LEADERBOARD"}
+              </h2>
+              <p className="subtitle mb-8" style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)' }}>
+                {currentRound >= maxRounds ? "The Ultimate Winner has been crowned!" : `Round ${currentRound} of ${maxRounds}`}
+              </p>
 
+              <div className="flex-col mb-8" style={{ gap: '12px' }}>
+                {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                  <div key={i} className="flex-row justify-between items-center" 
+                    onClick={() => {
+                       setSelectedPlayerName(p.name);
+                       if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
+                    }}
+                    style={{ padding: '16px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px', border: i === 0 ? '2px solid var(--primary)' : 'none', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'background 0.2s ease' }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.05)'}
+                  >
+                    {currentRound >= maxRounds && i === 0 && (
+                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)', animation: 'pulse-glow 2s infinite' }} />
+                    )}
+                    
+                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'white', zIndex: 1 }}>
+                       {i === 0 && currentRound >= maxRounds && "👑 "}
+                       {i + 1}. {p.name}
+                    </span>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 1 }}>
+                      {roundDeltas[p.id || ''] !== undefined && roundDeltas[p.id || ''] > 0 && (
+                         <span style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                            ↑ +{roundDeltas[p.id || '']}
+                         </span>
+                      )}
+                      <span className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900 }}>{p.score} pts</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="dashboard-sidebar justify-center">
+              <div className="glass-panel flex-col text-center" style={{background: 'rgba(0,0,0,0.5)', padding: '32px'}}>
+                 <h3 className="mb-4" style={{fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)'}}>HOST CONTROLS</h3>
+                 {currentRound < maxRounds && (
+                    <button className="btn-secondary w-full mb-4" onClick={() => setView('results')}>🔙 Show Gallery Results</button>
+                 )}
+                 {currentRound >= maxRounds ? (
+                    <button className="btn-secondary" style={{ border: '2px solid var(--primary)' }} onClick={() => {
+                       if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
+                    }}>🏆 Setup New Game</button>
+                 ) : (
+                    <button className="btn-primary" style={{padding: '24px', fontSize: '1.5rem'}} onClick={() => {
+                       if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
+                    }}>Start Next Round</button>
+                 )}
+              </div>
+            </div>
+          </div>
+        ) : (
+        <div className="glass-panel flex-col w-full text-center animate-slide-up" style={{ position: 'relative' }}>
           <Trophy size={48} className="text-primary mb-4 w-full" style={{ margin: '0 auto' }} />
           <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
             {currentRound >= maxRounds ? "FINAL RESULTS" : "LEADERBOARD"}
@@ -595,24 +674,13 @@ function App() {
               </div>
             ))}
           </div>
-          {/* Navigation for Players & Hosts */}
           {currentRound < maxRounds && (
               <button className="btn-secondary w-full mb-4" onClick={() => setView('results')}>🔙 Back to Results</button>
           )}
-
-          {isHostUser ? (
-             currentRound >= maxRounds ? (
-                <button className="btn-secondary" style={{ border: '2px solid var(--primary)' }} onClick={() => {
-                   if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
-                }}>🏆 Return to Lobby for a Rematch</button>
-             ) : (
-                <button className="btn-primary" onClick={() => {
-                   if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
-                }}>Next Round</button>
-             )
-          ) : (
-             <p className="subtitle">Waiting for Host...</p>
-          )}
+          <p className="subtitle">Waiting for Host...</p>
+        </div>
+        )
+      )}
 
           {/* Ultimate Winner Gallery */}
           {currentRound >= maxRounds && isHostUser && selectedPlayerHistory && (
@@ -667,8 +735,6 @@ function App() {
                  </div>
              </div>
           )}
-        </div>
-      )}
     </div>
   );
 }

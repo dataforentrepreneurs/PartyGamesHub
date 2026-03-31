@@ -203,3 +203,51 @@ body {
 .animate-slide-up {
   animation: slideUp 0.4s ease-out forwards;
 }
+
+/* Dashboard Layout for Host Screens */
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 350px;
+  gap: 24px;
+  width: 100%;
+  height: calc(100vh - 48px); 
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.dashboard-main { 
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto; 
+  padding-right: 12px;
+}
+.dashboard-main::-webkit-scrollbar { width: 0; }
+
+.dashboard-sidebar { 
+  display: flex; 
+  flex-direction: column; 
+  overflow-y: auto; 
+  gap: 16px;
+  background: hsla(230, 20%, 20%, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid hsla(0, 0%, 100%, 0.1);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+}
+.dashboard-sidebar::-webkit-scrollbar { width: 0; }
+
+/* Mobile no-scroll helper */
+.no-scroll-mobile {
+  height: calc(100dvh - 48px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}

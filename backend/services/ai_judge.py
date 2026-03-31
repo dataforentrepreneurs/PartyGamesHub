@@ -86,7 +86,7 @@ def extract_json(text: str) -> dict:
 
     return json.loads(text[start:end + 1])  # type: ignore
 
-async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> BatchEvaluationResult:
+async def evaluate_submissions(prompt: str, submissions: Dict[str, dict], theme: str = "Family") -> BatchEvaluationResult:
     print(f"Evaluating {len(submissions)} submissions for prompt: {prompt} in a single batch request.")
     
     if not submissions:
@@ -104,8 +104,16 @@ async def evaluate_submissions(prompt: str, submissions: Dict[str, dict]) -> Bat
         print(f"FAILED to initialize AI Client. Error: {error_msg}")
         return _fallback_all_to_mock(submissions, prompt, error_msg)
 
+    persona_map = {
+        "Couples": "Sarcastic Relationship Counselor who roasts drawings based on how much they would annoy a partner.",
+        "Kids": "Kind Kindergarten Teacher who gives gold stars and avoids sarcasm.",
+        "Office": "Stressed-out Middle Manager who is tired of Zoom calls and broken printers.",
+        "Family": "playful but strict art critic.",
+    }
+    persona = persona_map.get(theme, persona_map["Family"])
+
     instructions = f"""
-You are 'The Draw Judge', a playful but strict art critic for a multiplayer drawing game.
+You are 'The Draw Judge', a {persona}
 The drawing prompt was: "{prompt}"
 
 You are evaluating all players' drawings at once.
@@ -116,8 +124,7 @@ Scoring & Persona rules:
 - If it's a random scribble wildly ignoring the prompt, penalize it heavily.
 - Give high scores only if it is a verifiable attempt at the prompt.
 - Score each field (prompt_relevance, creativity, clarity, entertainment) from 0 to 10.
-- Keep comments UNDER 1 SENTENCE! Make it punchy and funny.
-- Roast lightly but do not be harsh.
+- Keep comments UNDER 1 SENTENCE! Make it punchy and funny (aligned with your current persona: {persona}).
 - Since you can see every submission, compare drawings to each other when possible for comedic effect!
 
 Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like this:
@@ -289,12 +296,22 @@ def _fallback_all_to_mock(submissions: Dict[str, dict], prompt: str, error_msg: 
         winner_explanation="The winner probably bribed the mock AI judge."
     )
 
-async def generate_creative_prompt() -> str:
+async def generate_creative_prompt(theme: str = "Family") -> str:
     try:
         client = get_gemini_client()
         model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         
-        instructions = "You are a creative party game host. Generate exactly ONE very funny, highly unique DRAWING PROMPT for a drawing game. It should be unexpected, slightly absurd, but very drawable. For example: 'A cat teaching a yoga class' or 'A toaster running for President'. ONLY return the prompt string itself, no quotes, no extra text."
+        instructions = f"You are a creative party game host. Generate exactly ONE very funny, highly unique DRAWING PROMPT for a drawing game. The theme for this round is '{theme}'.\n"
+        if theme == "Couples":
+            instructions += "Make it about relatable relationship arguments, couple tropes, or slightly petty domestic situations (e.g., 'Arguing over the TV remote', 'Who forgot to take out the trash').\n"
+        elif theme == "Kids":
+            instructions += "Make it extremely family friendly, silly, and appealing to young kids (e.g., 'A pizza with eyeballs', 'A superhero duck').\n"
+        elif theme == "Office":
+            instructions += "Make it about corporate life, annoyed coworkers, or relatable office chaos (e.g., 'The printer is jammed again', 'Zoom call in pajamas').\n"
+        else:
+            instructions += "Make it unexpected, slightly absurd, but very drawable. For example: 'A cat teaching a yoga class' or 'A toaster running for President'.\n"
+
+        instructions += "ONLY return the prompt string itself, no quotes, no extra text."
         
         def _call_model():
             return client.models.generate_content(  # type: ignore

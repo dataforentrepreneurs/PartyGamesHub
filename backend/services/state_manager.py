@@ -11,6 +11,7 @@ class RoomState:
         self.players = {} # player_id -> {"name": display_name, "score": 0}
         self.round_prompt = ""
         self.game_mode = "classic"
+        self.theme = "Family"
         self.submissions = {} 
         self.current_round = 0
         self.max_rounds = 10
