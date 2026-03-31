@@ -36,13 +36,20 @@ body {
 }
 
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 24px;
+  justify-content: stretch;
+  padding: 16px;
+  width: 100%;
 }
+@media (max-width: 768px) {
+  #root {
+    padding: 0;
+  }
+}
+
 
 /* Glassmorphism Classes */
 .glass-panel {
@@ -238,7 +245,7 @@ body {
 
 /* Mobile no-scroll helper */
 .no-scroll-mobile {
-  height: calc(100dvh - 48px);
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;

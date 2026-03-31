@@ -302,6 +302,7 @@ async def generate_creative_prompt(theme: str = "Family") -> str:
         model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         
         instructions = f"You are a creative party game host. Generate exactly ONE very funny, highly unique DRAWING PROMPT for a drawing game. The theme for this round is '{theme}'.\n"
+        instructions += "CRITICAL RULE: The prompt MUST BE a maximum of 10-12 words long. Keep it short, punchy, and scenario-based. DO NOT WRITE PARAGRAPHS OR LONG SCENES.\n"
         if theme == "Couples":
             instructions += "Make it about relatable relationship arguments, couple tropes, or slightly petty domestic situations (e.g., 'Arguing over the TV remote', 'Who forgot to take out the trash').\n"
         elif theme == "Kids":

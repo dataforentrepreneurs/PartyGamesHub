@@ -265,7 +265,7 @@ function App() {
   };
 
   return (
-    <div className={isHostUser ? "w-full max-w-6xl px-4" : "max-w-md w-full"}>
+    <div className={isHostUser ? "w-full max-w-6xl px-4 flex-col" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
       
       {/* Persistent Room Code on Host screen */}
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (

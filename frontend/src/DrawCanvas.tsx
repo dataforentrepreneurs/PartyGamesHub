@@ -120,7 +120,7 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
   }, []);
 
   return (
-    <div className="no-scroll-mobile max-w-md" style={{ gap: '8px', paddingBottom: '8px' }}>
+    <div className="no-scroll-mobile max-w-md mx-auto" style={{ gap: '12px', padding: '16px' }}>
       <div className="glass-panel text-center flex-none" style={{padding: '12px'}}>
         <h3 className={`title-giant ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{fontSize: '1.25rem', marginBottom: '4px', lineHeight: 1}}>
           {timeLeft}s
