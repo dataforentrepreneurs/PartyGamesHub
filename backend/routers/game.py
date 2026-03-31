@@ -3,9 +3,11 @@ from services.websocket_manager import manager # pyre-ignore
 from services.state_manager import get_room_state # pyre-ignore
 from services.ai_judge import evaluate_submissions, generate_creative_prompt # pyre-ignore
 import json
+import string
 import asyncio
 import os
 import random
+import time
 
 # Load Prompts Library
 PROMPTS_LIB = []
@@ -115,15 +117,19 @@ async def websocket_endpoint(
 
     await manager.connect(room_code, player_id, websocket)
     
+    time_left = max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
     # Broadcast updated room state to everyone
     await manager.broadcast_to_room(room_code, {
         "event": "room_state_update",
         "status": room.status,
         "players": room.players,
         "current_round": room.current_round,
-        "max_rounds": room.max_rounds
+        "max_rounds": room.max_rounds,
+        "prompt": room.round_prompt,
+        "mode": room.game_mode,
+        "host_id": room.host_id,
+        "time_left": time_left
     })
-
     try:
         while True:
             data = await websocket.receive_text()
@@ -142,11 +148,11 @@ async def websocket_endpoint(
                 ai_prompt = await generate_creative_prompt()
                 selected_prompt = ai_prompt if ai_prompt else random.choice(PROMPTS_LIB)
                 
-                room.start_round(selected_prompt, mode)
-                
                 duration = 60
                 if mode == "speed":
                     duration = 15
+                
+                room.start_round(selected_prompt, mode, duration)
                 
                 await manager.broadcast_to_room(room_code, {
                     "event": "round_started",
@@ -167,7 +173,11 @@ async def websocket_endpoint(
                             "status": room.status,
                             "players": room.players,
                             "current_round": room.current_round,
-                            "max_rounds": room.max_rounds
+                            "max_rounds": room.max_rounds,
+                            "prompt": room.round_prompt,
+                            "mode": room.game_mode,
+                            "host_id": room.host_id,
+                            "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
                         })
                         
             elif event == "return_to_lobby":
@@ -178,7 +188,11 @@ async def websocket_endpoint(
                         "status": room.status,
                         "players": room.players,
                         "current_round": room.current_round,
-                        "max_rounds": room.max_rounds
+                        "max_rounds": room.max_rounds,
+                        "prompt": room.round_prompt,
+                        "mode": room.game_mode,
+                        "host_id": room.host_id,
+                        "time_left": 0
                     })
                     
             elif event == "get_player_history":
@@ -238,5 +252,9 @@ async def websocket_endpoint(
             "status": room.status,
             "players": room.players,
             "current_round": room.current_round,
-            "max_rounds": room.max_rounds
+            "max_rounds": room.max_rounds,
+            "prompt": room.round_prompt,
+            "mode": room.game_mode,
+            "host_id": room.host_id,
+            "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
         })

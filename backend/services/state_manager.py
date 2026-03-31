@@ -1,6 +1,7 @@
 from typing import Dict, Optional
 import uuid
 import secrets
+import time
 
 class RoomState:
     def __init__(self, room_code: str, host_id: str):
@@ -15,19 +16,21 @@ class RoomState:
         self.max_rounds = 10
         self.last_round_deltas = {} # player_id -> latest round score
         self.player_history = {} # player_id -> list of details
+        self.round_end_time = 0.0
         
     def add_player(self, display_name: str) -> str:
         player_id = str(uuid.uuid4())
         self.players[player_id] = {"name": display_name, "score": 0}
         return player_id
         
-    def start_round(self, prompt: str, mode: str = "classic"):
+    def start_round(self, prompt: str, mode: str = "classic", duration: int = 60):
         self.status = "drawing"
         self.round_prompt = prompt
         self.game_mode = mode
         self.submissions = {}
         self.current_round += 1
         self.last_round_deltas = {}
+        self.round_end_time = time.time() + duration
         
     def add_submission(self, player_id: str, image_data: str):
         if self.status == "drawing":

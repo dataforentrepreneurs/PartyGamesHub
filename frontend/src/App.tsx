@@ -97,20 +97,41 @@ function App() {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ event: 'ping' }));
       }
-    }, 30000);
+    }, 15000); // Lowered to 15 seconds to beat aggressive TCP proxies
+
+    // Prevent Render's free tier HTTP Spin-Down Bug
+    const keepAliveInterval = setInterval(() => {
+        fetch(`${API_BASE}/rooms/fake-keep-alive`).catch(() => {});
+    }, 5 * 60 * 1000); // 5 minutes
 
     socket.onclose = () => {
       clearInterval(pingInterval);
+      clearInterval(keepAliveInterval);
     };
 
     socket.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.event === 'room_state_update') {
+        const isActuallyHost = (data.host_id === overridePlayerId) || isHost;
+        setIsHostUser(isActuallyHost);
         const playerList = Object.keys(data.players).map(pid => ({ id: pid, ...data.players[pid] }));
         setPlayers(playerList);
         if (data.current_round !== undefined) setCurrentRound(data.current_round);
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
-        if (data.status === 'waiting') setView(isHost ? 'hostLobby' : 'playerLobby');
+        
+        if (data.status === 'waiting') {
+            setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
+        } else if (data.status === 'drawing') {
+            setPrompt(data.prompt || '');
+            setGameMode(data.mode || 'classic');
+            setTimeLeft(data.time_left || 60);
+            setView('drawing');
+        } else if (data.status === 'judging') {
+            setView('judging');
+        } else if (data.status === 'results') {
+            // If they join during results but don't have the result payload, safely drop into lobby
+            setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
+        }
       } else if (data.event === 'round_started') {
         setPrompt(data.prompt);
         setGameMode(data.mode || 'classic');
@@ -213,6 +234,7 @@ function App() {
       setPlayerId(data.host_id);
       setPlayerName("Host");
       localStorage.setItem('dj_player_name', "Host");
+      localStorage.setItem('dj_player_id', data.host_id);
       connectWebSocket(data.room_code, true, data.host_id);
       setView('hostLobby');
     } catch (e) {
