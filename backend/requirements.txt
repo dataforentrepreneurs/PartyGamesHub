@@ -8,3 +8,4 @@ google-genai
 python-dotenv
 redis
 fakeredis
+posthog

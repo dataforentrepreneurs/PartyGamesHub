@@ -8,6 +8,19 @@ import asyncio
 import os
 import random
 import time
+import posthog
+from posthog import Posthog
+
+# Attempt to load frontend .env for the API key if missing locally
+frontend_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
+if os.path.exists(frontend_env_path):
+    from dotenv import load_dotenv
+    load_dotenv(frontend_env_path)
+
+POSTHOG_KEY = os.environ.get("POSTHOG_API_KEY") or os.environ.get("VITE_POSTHOG_KEY")
+ph_client = None
+if POSTHOG_KEY:
+    ph_client = Posthog(POSTHOG_KEY, host="https://eu.i.posthog.com")
 
 FALLBACK_PROMPTS = {
     "Family": ["A dog flying a kite", "A friendly monster baking cookies", "A penguin on vacation"],
@@ -44,6 +57,24 @@ async def process_judging(room_code: str, room):
             "event": "ai_diagnostic",
             "message": ai_status_msg
         })
+        
+        # Track AI Latency Backend-Side exactly once
+        if ph_client:
+            try:
+                ph_client.capture(
+                    "AI_Judge_Latency",
+                    distinct_id=room.host_id, # using host ID as distinct persona for the room
+                    properties={
+                        "latency_seconds": float(eval_result.ai_latency_seconds),
+                        "player_count": len(room.submissions),
+                        "is_mock": any_mock,
+                        "theme": room.theme
+                    }
+                )
+                ph_client.flush() # Force instantaneous delivery of latency metric
+            except Exception as e:
+                print("Posthog capture failed:", e)
+
         # Inform room to transition out of judging state to allow next rounds
         room.status = "results"
                 

@@ -77,6 +77,7 @@ function App() {
   const [isHostUser, setIsHostUser] = useState(false);
   const [showFullGallery, setShowFullGallery] = useState(false);
   const [hasPlayedFinale, setHasPlayedFinale] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const ws = useRef<WebSocket | null>(null);
 
@@ -170,7 +171,6 @@ function App() {
         }
         
         setView('results');
-        posthog.capture('AI_Judge_Latency', { latency_seconds: data.ai_latency_seconds, player_count: Object.keys(data.leaderboard || {}).length });
       } else if (data.event === 'player_history') {
         setSelectedPlayerHistory(data.history);
       } else if (data.event === 'submission_count_update') {
@@ -272,28 +272,58 @@ function App() {
   };
 
   const handleShare = async (id: string, name: string) => {
+    if (isSharing) return;
+    setIsSharing(true);
     const el = document.getElementById(id);
-    if (!el) return;
+    if (!el) {
+      alert("Element not found");
+      setIsSharing(false);
+      return;
+    }
+    
     try {
-      const dataUrl = await toJpeg(el, { quality: 0.95, backgroundColor: '#0f1322' });
+      const dataUrl = await toJpeg(el, { 
+          quality: 0.95, 
+          backgroundColor: '#0f1322',
+          pixelRatio: window.devicePixelRatio || 2,
+          // Opt out of font downloading if it takes too long
+          skipFonts: false 
+      });
       const blob = await (await fetch(dataUrl)).blob();
       const file = new File([blob], `${name}_DrawJudge.jpg`, { type: 'image/jpeg' });
       
+      let shared = false;
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: 'Draw Judge!',
-          text: 'Look at what the AI generated from my drawing! 🎨🤖',
-          files: [file]
-        });
-      } else {
+        try {
+            await navigator.share({
+              title: 'Draw Judge!',
+              text: 'Look at what the AI generated from my drawing! 🎨🤖',
+              files: [file]
+            });
+            shared = true;
+        } catch (shareErr: any) {
+            if (shareErr.name === 'AbortError') {
+                // User cancelled share dialogue, no big deal
+                shared = true; 
+            }
+        }
+      } 
+      
+      if (!shared) {
+        // Fallback to download
         const link = document.createElement('a');
         link.download = `${name}_DrawJudge.jpg`;
         link.href = dataUrl;
+        document.body.appendChild(link);
         link.click();
+        document.body.removeChild(link);
       }
       posthog.capture('Shared_To_Story');
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to share", err);
+      alert("Could not create image: " + (err.message || err.toString()));
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -564,10 +594,23 @@ function App() {
                       </div>
                     );
                   })()}
-                  <button className="btn-primary w-full mt-2 mb-4" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', animation: 'pulse-glow 2s infinite' }} onClick={() => {
+                  
+                  {(() => {
                         const myRank = results.findIndex(r => r.submission_id === playerId);
-                        if (myRank !== -1) handleShare('my-share-card', 'MyDrawing');
-                  }}><Share2 size={24} /> Share to Story 📸</button>
+                        if (myRank === -1) return null;
+                        return (
+                          <button 
+                              className="btn-primary w-full mt-2 mb-4" 
+                              style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', animation: isSharing ? 'none' : 'pulse-glow 2s infinite', opacity: isSharing ? 0.7 : 1 }} 
+                              disabled={isSharing}
+                              onClick={() => handleShare('my-share-card', 'MyDrawing')}
+                          >
+                            {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />} 
+                            {isSharing ? 'Generating Image...' : 'Share to Story 📸'}
+                          </button>
+                        );
+                  })()}
+                  
                   <button className="btn-secondary w-full" onClick={() => setShowFullGallery(true)}>View Full Gallery 🖼️</button>
                   <button className="btn-secondary w-full mt-4" style={{border: '2px solid var(--primary)'}} onClick={() => setView('leaderboard')}>View Leaderboard 🏆</button>
             </>

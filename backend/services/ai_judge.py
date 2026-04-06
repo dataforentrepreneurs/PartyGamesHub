@@ -189,7 +189,7 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
     
     response = None
     last_error = ""
-    start_time = time.time()
+    start_time = time.perf_counter()
 
     for model_name in models_to_try:
         try:
@@ -211,7 +211,7 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
             print(f"Model {model_name} failed: {last_error}")
             continue
 
-    latency = round(time.time() - start_time, 2)
+    latency = float(time.perf_counter() - start_time)
     if not response:
         print(f"All models failed batch evaluation. Generating Mocks. Last trace: {last_error}")
         return _fallback_all_to_mock(submissions, prompt, last_error, latency)
