@@ -39,6 +39,8 @@ class RoomState:
         self.round_end_time = 0.0
         self.player_presence = {} # player_id -> {"connected": bool, "last_seen": float}
         self.round_participants = [] # list of player_ids active at the start of current round
+        self.last_round_summary = ""
+        self.last_winner_explanation = ""
         
     def add_player(self, display_name: str) -> str:
         player_id = str(uuid.uuid4())
@@ -89,6 +91,8 @@ class RoomState:
             "round_end_time": self.round_end_time,
             "player_presence": self.player_presence,
             "round_participants": self.round_participants,
+            "last_round_summary": self.last_round_summary,
+            "last_winner_explanation": self.last_winner_explanation,
             "submissions": {},
             "player_history": {}
         }
@@ -128,6 +132,8 @@ class RoomState:
         room.round_end_time = float(data.get("round_end_time", 0.0))
         room.player_presence = data.get("player_presence", {})
         room.round_participants = data.get("round_participants", [])
+        room.last_round_summary = data.get("last_round_summary", "")
+        room.last_winner_explanation = data.get("last_winner_explanation", "")
         return room
 
     def save(self):

@@ -102,6 +102,10 @@ async def process_judging(room_code: str, room):
             for p_id, p_stats in room.players.items():
                 if p_id in winner_exp:
                     winner_exp = winner_exp.replace(p_id, p_stats["name"])
+        
+        room.last_round_summary = eval_result.round_summary
+        room.last_winner_explanation = winner_exp
+        room.save()
 
         # Broadcast results
         await manager.broadcast_to_room(room_code, {
@@ -144,6 +148,9 @@ async def websocket_endpoint(
     # Add player if not exists
     if player_id not in room.players and player_id != room.host_id:
         room.players[player_id] = {"name": name, "score": 0}
+        if room.status == "drawing":
+            room.round_participants.append(player_id)
+            room.save()
 
     room.player_presence[player_id] = {"connected": True, "last_seen": time.time()}
 
@@ -167,6 +174,32 @@ async def websocket_endpoint(
         "leaderboard": room.players,
         "is_host": player_id == room.host_id
     }))
+    
+    if room.status == "results":
+        current_results = []
+        for pid, history in room.player_history.items():
+            if history and history[-1]["round"] == room.current_round:
+                last_entry = history[-1]
+                sub_data = room.submissions.get(pid, {})
+                img = sub_data.get("image", "") if isinstance(sub_data, dict) else ""
+                current_results.append({
+                    "submission_id": pid,
+                    "total_score": last_entry["total_score"],
+                    "comment": last_entry["comment"],
+                    "scores": last_entry["scores"],
+                    "image": img
+                })
+        current_results.sort(key=lambda x: x["total_score"], reverse=True)
+        await websocket.send_text(json.dumps({
+            "event": "results_ready",
+            "results": current_results,
+            "round_summary": room.last_round_summary,
+            "winner_explanation": room.last_winner_explanation,
+            "leaderboard": room.players,
+            "current_round": room.current_round,
+            "max_rounds": room.max_rounds,
+            "round_deltas": room.last_round_deltas
+        }))
     
     time_left = max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
     # Broadcast updated room state to everyone

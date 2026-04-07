@@ -84,6 +84,17 @@ function App() {
   const [hasSubmittedImage, setHasSubmittedImage] = useState<string | null>(null);
 
   const ws = useRef<WebSocket | null>(null);
+  
+  const viewRef = useRef(view);
+  const hasSubmittedRef = useRef(hasSubmittedThisRound);
+
+  useEffect(() => {
+    viewRef.current = view;
+  }, [view]);
+
+  useEffect(() => {
+    hasSubmittedRef.current = hasSubmittedThisRound;
+  }, [hasSubmittedThisRound]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -118,7 +129,7 @@ function App() {
       setIsConnected(false);
       // Auto-reconnect after 3 seconds if not in a landing state
       setTimeout(() => {
-          if (view !== 'landing' && view !== 'join') {
+          if (viewRef.current !== 'landing' && viewRef.current !== 'join') {
               console.log("Attempting to reconnect...");
               connectWebSocket(code, isHost, overridePlayerId);
           }
@@ -154,7 +165,7 @@ function App() {
         } else if (data.status === 'drawing') {
             if (isActuallyHost) {
                  setView('drawing');
-            } else if (!hasSubmittedThisRound) {
+            } else if (!hasSubmittedRef.current) {
                  if (data.time_left !== undefined) setTimeLeft(data.time_left);
                  setView('drawing');
             }
