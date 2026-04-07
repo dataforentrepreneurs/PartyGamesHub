@@ -37,10 +37,13 @@ class RoomState:
         self.last_round_deltas = {} # player_id -> latest round score
         self.player_history = {} # player_id -> list of details
         self.round_end_time = 0.0
+        self.player_presence = {} # player_id -> {"connected": bool, "last_seen": float}
+        self.round_participants = [] # list of player_ids active at the start of current round
         
     def add_player(self, display_name: str) -> str:
         player_id = str(uuid.uuid4())
         self.players[player_id] = {"name": display_name, "score": 0}
+        self.player_presence[player_id] = {"connected": True, "last_seen": time.time()}
         self.save()
         return player_id
         
@@ -52,6 +55,7 @@ class RoomState:
         self.current_round += 1
         self.last_round_deltas = {}
         self.round_end_time = time.time() + duration
+        self.round_participants = list(self.players.keys())
         self.save()
         
     def add_submission(self, player_id: str, image_data: str):
@@ -83,6 +87,8 @@ class RoomState:
             "max_rounds": self.max_rounds,
             "last_round_deltas": self.last_round_deltas,
             "round_end_time": self.round_end_time,
+            "player_presence": self.player_presence,
+            "round_participants": self.round_participants,
             "submissions": {},
             "player_history": {}
         }
@@ -120,6 +126,8 @@ class RoomState:
         room.last_round_deltas = data.get("last_round_deltas", {})
         room.player_history = data.get("player_history", {})
         room.round_end_time = float(data.get("round_end_time", 0.0))
+        room.player_presence = data.get("player_presence", {})
+        room.round_participants = data.get("round_participants", [])
         return room
 
     def save(self):

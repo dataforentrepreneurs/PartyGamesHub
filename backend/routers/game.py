@@ -142,11 +142,31 @@ async def websocket_endpoint(
         return
 
     # Add player if not exists
-    # The host should sit in "Projector Mode", not directly as a competitive player
     if player_id not in room.players and player_id != room.host_id:
         room.players[player_id] = {"name": name, "score": 0}
 
+    room.player_presence[player_id] = {"connected": True, "last_seen": time.time()}
+
     await manager.connect(room_code, player_id, websocket)
+
+    # Immediately send dedicated resume_state event to the player
+    has_sub = player_id in room.submissions
+    sub_image = room.submissions.get(player_id, {}).get("image", "")
+
+    await websocket.send_text(json.dumps({
+        "event": "resume_state",
+        "status": room.status,
+        "current_round": room.current_round,
+        "max_rounds": room.max_rounds,
+        "prompt": room.round_prompt,
+        "mode": room.game_mode,
+        "theme": room.theme,
+        "time_left": max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0,
+        "has_submitted": has_sub,
+        "submitted_image": sub_image,
+        "leaderboard": room.players,
+        "is_host": player_id == room.host_id
+    }))
     
     time_left = max(0, int(room.round_end_time - time.time())) if room.status == "drawing" else 0
     # Broadcast updated room state to everyone
@@ -170,6 +190,8 @@ async def websocket_endpoint(
             event = message.get("event")
             
             if event == "ping":
+                room.player_presence[player_id] = {"connected": True, "last_seen": time.time()}
+                await websocket.send_text(json.dumps({"event": "pong"}))
                 continue
                 
             if event == "start_round":
@@ -255,8 +277,9 @@ async def websocket_endpoint(
                         "total": len(room.players)
                     })
                     
-                    # If all players have submitted
-                    if len(room.submissions) >= len(room.players) and len(room.players) > 0:
+                    # If all ACTIVE participants have submitted
+                    active_participants = [p for p in room.round_participants if room.player_presence.get(p, {}).get("connected", False)]
+                    if len(room.submissions) >= len(active_participants) and len(active_participants) > 0:
                         room.status = "judging"
                         await manager.broadcast_to_room(room_code, {
                             "event": "judging_started"
@@ -273,17 +296,18 @@ async def websocket_endpoint(
     except WebSocketDisconnect:
         manager.disconnect(room_code, player_id)
         
-        # Only remove the player from state if the game hasn't started yet.
-        # Otherwise, preserve their score/history in case they reconnect!
-        if room.status == "waiting" and player_id in room.players:
-            del room.players[player_id]
+        # Mark as disconnected instead of immediately assuming total loss of player
+        if player_id in room.player_presence:
+            room.player_presence[player_id]["connected"] = False
+            room.player_presence[player_id]["last_seen"] = time.time()
             
-        # Check if the round was stalled waiting for this player
-        if room.status == "drawing" and len(room.players) > 0 and len(room.submissions) >= len(room.players):
-            room.status = "judging"
-            await manager.broadcast_to_room(room_code, {"event": "judging_started"})
-            # Trigger asynchronous judging task
-            asyncio.create_task(process_judging(room_code, room))
+        # Check if the round was stalled waiting for this explicitly disconnected player
+        if room.status == "drawing" and len(room.round_participants) > 0:
+            active_participants = [p for p in room.round_participants if room.player_presence.get(p, {}).get("connected", False)]
+            if len(active_participants) > 0 and len(room.submissions) >= len(active_participants):
+                room.status = "judging"
+                await manager.broadcast_to_room(room_code, {"event": "judging_started"})
+                asyncio.create_task(process_judging(room_code, room))
 
         # Notify remaining players
         await manager.broadcast_to_room(room_code, {

@@ -80,6 +80,8 @@ function App() {
   const [isSharing, setIsSharing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
   const [roundEndTime, setRoundEndTime] = useState(0);
+  const [hasSubmittedThisRound, setHasSubmittedThisRound] = useState(false);
+  const [hasSubmittedImage, setHasSubmittedImage] = useState<string | null>(null);
 
   const ws = useRef<WebSocket | null>(null);
 
@@ -138,6 +140,11 @@ function App() {
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
         if (data.theme !== undefined) setTheme(data.theme);
         
+        if (data.status === 'judging') {
+             setHasSubmittedThisRound(false);
+             setHasSubmittedImage(null);
+        }
+
         if (data.status === 'drawing' && data.time_left !== undefined) {
              setRoundEndTime(Date.now() + (data.time_left * 1000));
         }
@@ -145,16 +152,61 @@ function App() {
         if (data.status === 'waiting') {
             setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
         } else if (data.status === 'drawing') {
-            setPrompt(data.prompt || '');
-            setGameMode(data.mode || 'classic');
-            if (data.time_left !== undefined) setTimeLeft(data.time_left);
-            setView('drawing');
+            if (isActuallyHost) {
+                 setView('drawing');
+            } else if (!hasSubmittedThisRound) {
+                 if (data.time_left !== undefined) setTimeLeft(data.time_left);
+                 setView('drawing');
+            }
         } else if (data.status === 'judging') {
             setView('judging');
         } else if (data.status === 'results') {
             setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
         }
+      } else if (data.event === 'resume_state') {
+        setIsHostUser(data.is_host);
+        const isActuallyHost = data.is_host;
+        setPrompt(data.prompt || '');
+        setGameMode(data.mode || 'classic');
+        if (data.theme !== undefined) setTheme(data.theme);
+        if (data.time_left !== undefined) {
+             setRoundEndTime(Date.now() + (data.time_left * 1000));
+             setTimeLeft(data.time_left);
+        }
+        if (data.current_round !== undefined) setCurrentRound(data.current_round);
+        if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
+        if (data.leaderboard) {
+            const playerList = Object.keys(data.leaderboard).map(pid => ({ id: pid, ...data.leaderboard[pid] }));
+            setPlayers(playerList);
+        }
+        
+        if (data.has_submitted) {
+             setHasSubmittedThisRound(true);
+             setHasSubmittedImage(data.submitted_image || null);
+        } else {
+             setHasSubmittedThisRound(false);
+             setHasSubmittedImage(null);
+        }
+        
+        if (data.status === 'waiting') {
+            setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
+        } else if (data.status === 'drawing') {
+            if (isActuallyHost) {
+                 setView('drawing');
+            } else if (data.has_submitted) {
+                 setView('playerLobby');
+            } else {
+                 setView('drawing');
+            }
+        } else if (data.status === 'judging') {
+            setView('judging');
+        } else if (data.status === 'results') {
+            // Ideally should wait for results_ready, but if disconnected during results, fallback to lobby
+            setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
+        }
       } else if (data.event === 'round_started') {
+        setHasSubmittedThisRound(false);
+        setHasSubmittedImage(null);
         setPrompt(data.prompt);
         setGameMode(data.mode || 'classic');
         if (data.duration_seconds !== undefined) {
@@ -279,9 +331,10 @@ function App() {
   const submitJoin = () => {
     if (!roomCode || !playerName) return;
     localStorage.setItem('dj_player_name', playerName);
+    localStorage.setItem('dj_player_id', playerId);
     connectWebSocket(roomCode, false, playerId);
-    setView('playerLobby');
     posthog.capture('Player_Joined', { room_code: roomCode });
+    // Wait for the new resume_state payload to deliberately route the view instead of hardcoding 'playerLobby'
   };
 
   const handleStartGame = () => {
@@ -293,7 +346,9 @@ function App() {
   const handleDrawSubmit = (dataUrl: string) => {
     if (ws.current) {
       ws.current.send(JSON.stringify({ event: 'submit_drawing', image_data: dataUrl }));
-      setView('judging');
+      setHasSubmittedThisRound(true);
+      setHasSubmittedImage(dataUrl);
+      setView('playerLobby');
       posthog.capture('Drawing_Submitted', { mode: gameMode });
     }
   };
@@ -457,7 +512,17 @@ function App() {
       {view === 'playerLobby' && (
         <div className="glass-panel flex-col text-center">
           <h2 className="title-giant" style={{ fontSize: '2.5rem' }}>CONNECTED</h2>
-          <p className="subtitle mb-4">Waiting for Host to start the game...</p>
+          <p className="subtitle mb-4">Waiting for Host to start the next action...</p>
+          
+          {hasSubmittedThisRound && hasSubmittedImage && (
+              <div className="mb-4 animate-fade-in" style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '16px' }}>
+                  <span style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '1.2rem', display: 'block', marginBottom: '8px' }}>✅ Drawing Submitted Successfully!</span>
+                  <div className="mt-2" style={{ display: 'flex', justifyContent: 'center' }}>
+                      <img src={hasSubmittedImage} alt="Your submission" style={{ width: '100%', maxWidth: '240px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '8px', border: '2px solid hsla(0,0%,100%,0.2)', backgroundColor: 'black' }} />
+                  </div>
+              </div>
+          )}
+
           {currentRound > 0 && (
               <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '16px' }}>
                 <h3 style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)', marginBottom: '8px' }}>Current Progress</h3>
