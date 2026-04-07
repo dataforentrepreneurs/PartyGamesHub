@@ -78,6 +78,8 @@ function App() {
   const [showFullGallery, setShowFullGallery] = useState(false);
   const [hasPlayedFinale, setHasPlayedFinale] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
+  const [roundEndTime, setRoundEndTime] = useState(0);
 
   const ws = useRef<WebSocket | null>(null);
 
@@ -111,6 +113,18 @@ function App() {
     socket.onclose = () => {
       clearInterval(pingInterval);
       clearInterval(keepAliveInterval);
+      setIsConnected(false);
+      // Auto-reconnect after 3 seconds if not in a landing state
+      setTimeout(() => {
+          if (view !== 'landing' && view !== 'join') {
+              console.log("Attempting to reconnect...");
+              connectWebSocket(code, isHost, overridePlayerId);
+          }
+      }, 3000);
+    };
+
+    socket.onopen = () => {
+       setIsConnected(true);
     };
 
     socket.onmessage = (event) => {
@@ -124,23 +138,29 @@ function App() {
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
         if (data.theme !== undefined) setTheme(data.theme);
         
+        if (data.status === 'drawing' && data.time_left !== undefined) {
+             setRoundEndTime(Date.now() + (data.time_left * 1000));
+        }
+
         if (data.status === 'waiting') {
             setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
         } else if (data.status === 'drawing') {
             setPrompt(data.prompt || '');
             setGameMode(data.mode || 'classic');
-            setTimeLeft(data.time_left || 60);
+            if (data.time_left !== undefined) setTimeLeft(data.time_left);
             setView('drawing');
         } else if (data.status === 'judging') {
             setView('judging');
         } else if (data.status === 'results') {
-            // If they join during results but don't have the result payload, safely drop into lobby
             setView(isActuallyHost ? 'hostLobby' : 'playerLobby');
         }
       } else if (data.event === 'round_started') {
         setPrompt(data.prompt);
         setGameMode(data.mode || 'classic');
-        setTimeLeft(data.duration_seconds || 60);
+        if (data.duration_seconds !== undefined) {
+            setTimeLeft(data.duration_seconds);
+            setRoundEndTime(Date.now() + (data.duration_seconds * 1000));
+        }
         if (data.current_round !== undefined) setCurrentRound(data.current_round);
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
         setSubmissionCount(0);
@@ -180,13 +200,20 @@ function App() {
   }
 
   useEffect(() => {
-    if (view === 'drawing' && timeLeft > 0) {
-      if (timeLeft <= 10) playTickSound();
-      const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-      return () => clearTimeout(timer);
+    if (view === 'drawing' && roundEndTime > 0) {
+      const timer = setInterval(() => {
+        const remaining = Math.max(0, Math.ceil((roundEndTime - Date.now()) / 1000));
+        setTimeLeft(remaining);
+        if (remaining <= 10 && remaining > 0) playTickSound();
+        if (remaining <= 0) clearInterval(timer);
+      }, 500);
+      return () => clearInterval(timer);
     }
+  }, [view, roundEndTime]);
+
+  useEffect(() => {
     if (view === 'drawing' && timeLeft === 0 && isHostUser && ws.current) {
-       // Allow mobile clients a brief 3-second grace period to finish and upload their auto-submitted Canvas JPEGs
+       // Allow mobile clients a brief grace period so auto-submitted Canvas JPEGs flush perfectly
        const overrideTimer = setTimeout(() => {
            ws.current?.send(JSON.stringify({ event: 'force_judging' }));
        }, 3000);
@@ -330,10 +357,24 @@ function App() {
   return (
     <div className={isHostUser ? "w-full max-w-6xl px-4 flex-col" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
       
+      {!isConnected && (
+         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <Loader2 size={64} className="text-primary animate-spin mb-4" />
+            <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold' }}>Connection Lost</h2>
+            <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Reconnecting automatically...</p>
+         </div>
+      )}
+
       {/* Persistent Room Code on Host screen */}
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (
-         <div className="glass-panel" style={{ position: 'absolute', top: '16px', left: '16px', padding: '12px 24px', zIndex: 50, border: '2px solid var(--primary)' }}>
-            <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Room Code: <span className="text-primary">{roomCode}</span></span>
+         <div className="glass-panel text-center flex-row" style={{ position: 'absolute', top: '16px', left: '16px', padding: '12px 24px', zIndex: 50, border: '2px solid var(--primary)', alignItems: 'center', gap: '16px' }}>
+            <div style={{ background: 'white', padding: '4px', borderRadius: '8px' }}>
+               <QRCodeSVG value={`${window.location.origin}/?room=${roomCode}`} size={60} />
+            </div>
+            <div className="flex-col text-left">
+                <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {window.location.host}</span>
+                <span style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1 }}>Code: <span className="text-primary">{roomCode}</span></span>
+            </div>
          </div>
       )}
       {view === 'landing' && (
@@ -416,7 +457,13 @@ function App() {
       {view === 'playerLobby' && (
         <div className="glass-panel flex-col text-center">
           <h2 className="title-giant" style={{ fontSize: '2.5rem' }}>CONNECTED</h2>
-          <p className="subtitle">Waiting for Host to start the game...</p>
+          <p className="subtitle mb-4">Waiting for Host to start the game...</p>
+          {currentRound > 0 && (
+              <div style={{ background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '16px' }}>
+                <h3 style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)', marginBottom: '8px' }}>Current Progress</h3>
+                <h1 style={{ fontSize: '2.5rem', color: 'var(--primary)', fontWeight: 900, lineHeight: 1 }}>Round {currentRound} / {maxRounds}</h1>
+              </div>
+          )}
         </div>
       )}
 
