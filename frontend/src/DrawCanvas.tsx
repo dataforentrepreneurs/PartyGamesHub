@@ -19,6 +19,14 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
   const [paths, setPaths] = useState<Path[]>([]);
   const [currentPath, setCurrentPath] = useState<Path | null>(null);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  
+  const submitFnRef = useRef(onSubmit);
+  const hasSubmittedRef = useRef(hasSubmitted);
+
+  useEffect(() => {
+    submitFnRef.current = onSubmit;
+    hasSubmittedRef.current = hasSubmitted;
+  }, [onSubmit, hasSubmitted]);
 
   // Auto-submit when time runs out
   useEffect(() => {
@@ -29,6 +37,15 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
       }
     }
   }, [timeLeft, hasSubmitted, onSubmit]);
+
+  // Auto-submit safety net on unmount (e.g. host forced judging)
+  useEffect(() => {
+    return () => {
+      if (!hasSubmittedRef.current && canvasRef.current) {
+        submitFnRef.current(canvasRef.current.toDataURL('image/jpeg', 0.6));
+      }
+    };
+  }, []);
 
   // Blind Draw logic
   useEffect(() => {

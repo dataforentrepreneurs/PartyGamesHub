@@ -317,14 +317,21 @@ async def websocket_endpoint(
                         await manager.broadcast_to_room(room_code, {
                             "event": "judging_started"
                         })
-                        # Trigger asynchronous judging task
-                        asyncio.create_task(process_judging(room_code, room))
+                        # Add a tiny delay to allow any pending canvas-finish packets from laggy connections to arrive
+                        async def delayed_judging():
+                            await asyncio.sleep(1.5)
+                            await process_judging(room_code, room)
+                        asyncio.create_task(delayed_judging())
             
             elif event == "force_judging":
                 if player_id == room.host_id and room.status == "drawing":
                     room.status = "judging"
                     await manager.broadcast_to_room(room_code, {"event": "judging_started"})
-                    asyncio.create_task(process_judging(room_code, room))
+                    
+                    async def delayed_judging():
+                        await asyncio.sleep(1.5)
+                        await process_judging(room_code, room)
+                    asyncio.create_task(delayed_judging())
                         
     except WebSocketDisconnect:
         manager.disconnect(room_code, player_id)
@@ -340,7 +347,11 @@ async def websocket_endpoint(
             if len(active_participants) > 0 and len(room.submissions) >= len(active_participants):
                 room.status = "judging"
                 await manager.broadcast_to_room(room_code, {"event": "judging_started"})
-                asyncio.create_task(process_judging(room_code, room))
+                
+                async def delayed_judging():
+                    await asyncio.sleep(1.5)
+                    await process_judging(room_code, room)
+                asyncio.create_task(delayed_judging())
 
         # Notify remaining players
         await manager.broadcast_to_room(room_code, {
