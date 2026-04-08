@@ -31,9 +31,9 @@ function App() {
           tabIndex={0}
           onClick={(e) => {
             e.preventDefault()
-            go('/drawjudge/')
+            go('/drawjudge/index.html')
           }}
-          onKeyDown={(e) => onCardKeyDown(e, '/drawjudge/')}
+          onKeyDown={(e) => onCardKeyDown(e, '/drawjudge/index.html')}
         >
           <div className="card-image drawjudge-img">
             <span>🎨</span>
