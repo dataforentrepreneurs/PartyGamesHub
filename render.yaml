@@ -3,21 +3,11 @@ services:
   - type: web
     name: party-games-hub
     env: python
+    plan: free # <--- ENSURES THE SERVER IS FREE
     buildCommand: |
-      # Install python dependencies
       pip install -r Server/requirements.txt
-      
-      # Build Launcher Frontend
-      cd Games/Launcher
-      npm install
-      npm run build
-      cd ../..
-      
-      # Build DrawJudge Frontend
-      cd Games/DrawJudge
-      npm install
-      npm run build
-      cd ../..
+      cd Games/Launcher && npm install && npm run build && cd ../..
+      cd Games/DrawJudge && npm install && npm run build && cd ../..
     startCommand: |
       cd Server
       python -m uvicorn main:app --host 0.0.0.0 --port $PORT
@@ -26,7 +16,7 @@ services:
         value: 3.11.0
       - key: REDIS_URL
         fromService:
-          type: keyvalue
+          type: redis
           name: party-games-redis
           property: connectionString
       - key: SENTRY_DSN
@@ -45,7 +35,7 @@ services:
         value: /opt/render/project/src/Games/DrawJudge/dist
 
   # Redis instance for persistence
-  - type: keyvalue
+  - type: redis
     name: party-games-redis
-    ipAllowList: [] # Only allow internal connections
-    plan: free # Change to 'starter' for persistence across restarts in free tier
+    plan: free # <--- ENSURES REDIS IS FREE
+    ipAllowList: [] 
