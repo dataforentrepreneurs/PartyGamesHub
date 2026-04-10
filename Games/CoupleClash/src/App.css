@@ -1,0 +1,215 @@
+:root {
+  --blue-team: #0088ff;
+  --pink-team: #ff0088;
+  --neutral: #888888;
+  --trap: #ff4400;
+  --background: #0a0a0f;
+  --panel-bg: rgba(255, 255, 255, 0.05);
+  --border: rgba(255, 255, 255, 0.1);
+  --primary-glow: rgba(0, 136, 255, 0.3);
+  --pink-glow: rgba(255, 0, 136, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  background-color: var(--background);
+  color: white;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: radial-gradient(circle at 50% 50%, #1a1a2e 0%, #0a0a0f 100%);
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+/* Glassmorphism */
+.glass-panel {
+  background: var(--panel-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  width: 100%;
+  max-width: 1200px;
+}
+
+.title-giant {
+  font-size: 4rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -2px;
+  margin-bottom: 1rem;
+  background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  color: hsla(0, 0%, 100%, 0.7);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.btn-primary {
+  background: var(--blue-team);
+  color: white;
+  box-shadow: 0 0 20px var(--primary-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px var(--primary-glow);
+}
+
+.btn-secondary {
+  background: var(--pink-team);
+  color: white;
+  box-shadow: 0 0 20px var(--pink-glow);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px var(--pink-glow);
+}
+
+/* Grid Layout */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-top: 2rem;
+  perspective: 1000px;
+}
+
+.tile {
+  aspect-ratio: 1/1;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tile.revealed {
+  /* transform handled in component */
+}
+
+.tile-front, .tile-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tile-front {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tile-front img {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+.tile-back {
+  transform: rotateY(180deg);
+}
+
+.tile.blue .tile-back { background: var(--blue-team); }
+.tile.pink .tile-back { background: var(--pink-team); }
+.tile.neutral .tile-back { background: var(--neutral); }
+.tile.trap .tile-back { background: var(--trap); }
+
+/* Animations */
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 20px var(--primary-glow); }
+  50% { box-shadow: 0 0 40px var(--primary-glow); }
+  100% { box-shadow: 0 0 20px var(--primary-glow); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+  100% { transform: translateY(0px); }
+}
+
+.badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.tile-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+}
+
+.tile-reveal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  transition: opacity 0.5s ease;
+}
+
+.tile-reveal-overlay.blue { background: rgba(0, 136, 255, 0.8); }
+.tile-reveal-overlay.pink { background: rgba(255, 0, 136, 0.8); }
+.tile-reveal-overlay.neutral { background: rgba(136, 136, 136, 0.8); }
+.tile-reveal-overlay.trap { background: rgba(255, 68, 0, 0.8); }
+
+.tile-reveal-overlay svg {
+  color: white;
+  filter: drop-shadow(0 0 10px rgba(0,0,0,0.5));
+}

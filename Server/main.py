@@ -13,7 +13,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
-from routers import rooms, game
+from routers import rooms, game, couple_clash
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -68,6 +68,7 @@ app.add_middleware(
 )
 
 # Mount modular API routers
+app.include_router(couple_clash.router)
 app.include_router(rooms.router, prefix="/api/drawjudge")
 app.include_router(game.router)
 
@@ -79,21 +80,25 @@ async def health_check():
 # Mount the compiled React Single Page Apps for production serving
 launcher_dist = os.getenv("LAUNCHER_DIST", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Games", "Launcher", "dist")))
 drawjudge_dist = os.getenv("DRAWJUDGE_DIST", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Games", "DrawJudge", "dist")))
+coupleclash_dist = os.getenv("COUPLECLASH_DIST", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Games", "CoupleClash", "dist")))
 
 # Diagnostic logging for Render paths
 logger.info(f"DEBUG: Launcher path: {launcher_dist} (Exists: {os.path.exists(launcher_dist)})")
 logger.info(f"DEBUG: DrawJudge path: {drawjudge_dist} (Exists: {os.path.exists(drawjudge_dist)})")
+logger.info(f"DEBUG: CoupleClash path: {coupleclash_dist} (Exists: {os.path.exists(coupleclash_dist)})")
 
 # Mount assets specifically (Vite defaults to /assets)
 if os.path.exists(launcher_dist):
     app.mount("/assets", StaticFiles(directory=os.path.join(launcher_dist, "assets")), name="launcher_assets")
 if os.path.exists(drawjudge_dist):
     app.mount("/drawjudge/assets", StaticFiles(directory=os.path.join(drawjudge_dist, "assets")), name="drawjudge_assets")
+if os.path.exists(coupleclash_dist):
+    app.mount("/coupleclash/assets", StaticFiles(directory=os.path.join(coupleclash_dist, "assets")), name="coupleclash_assets")
 
 @app.get("/{full_path:path}")
 async def serve_frontend(request: Request, full_path: str):
-    # CRITICAL: If this is an API or WS request, DO NOT return HTML
-    if full_path.startswith("api/") or full_path.startswith("ws/") or "api/" in request.url.path:
+    # CRITICAL: If this is an API request, DO NOT return HTML
+    if full_path.startswith("api/") or "api/" in request.url.path:
         raise HTTPException(status_code=404, detail=f"API route '{full_path}' not found on server.")
 
     # Handle DrawJudge frontend (SPA at /drawjudge)
@@ -110,6 +115,21 @@ async def serve_frontend(request: Request, full_path: str):
             return FileResponse(target_path)
         # Fallback to index.html for SPA routing
         return FileResponse(os.path.join(drawjudge_dist, "index.html"))
+
+    # Handle CoupleClash frontend (SPA at /coupleclash)
+    if full_path.startswith("coupleclash"):
+        if not os.path.exists(coupleclash_dist):
+            logger.warning(f"CoupleClash dist not found at {coupleclash_dist}")
+            return {"error": "CoupleClash frontend not built"}
+        
+        # Strip 'coupleclash/' to seek files within the dist folder
+        sub_path = full_path[11:].lstrip("/") 
+        target_path = os.path.join(coupleclash_dist, sub_path)
+        
+        if sub_path and os.path.isfile(target_path):
+            return FileResponse(target_path)
+        # Fallback to index.html for SPA routing
+        return FileResponse(os.path.join(coupleclash_dist, "index.html"))
 
     # Handle Launcher frontend (SPA at root)
     if os.path.exists(launcher_dist):

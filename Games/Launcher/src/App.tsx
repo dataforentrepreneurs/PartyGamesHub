@@ -44,13 +44,22 @@ function App() {
           </div>
         </a>
 
-        <a href="/tambola/" className="game-card empty-card">
-          <div className="card-image tambola-img">
-            <span>🎱</span>
+        <a
+          href="/coupleclash/"
+          className="game-card"
+          tabIndex={0}
+          onClick={(e) => {
+            e.preventDefault()
+            go('/coupleclash/index.html')
+          }}
+          onKeyDown={(e) => onCardKeyDown(e, '/coupleclash/index.html')}
+        >
+          <div className="card-image coupleclash-img" style={{ background: 'linear-gradient(135deg, var(--blue-team) 0%, var(--pink-team) 100%)' }}>
+            <span>🎯</span>
           </div>
           <div className="card-content">
-            <h2>Tambola</h2>
-            <p>Coming Soon...</p>
+            <h2>Couple Clash</h2>
+            <p>Picture Wars: Team-based image guessing!</p>
           </div>
         </a>
       </main>
