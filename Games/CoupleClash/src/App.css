@@ -1,13 +1,13 @@
 :root {
   --blue-team: #0088ff;
-  --pink-team: #ff0088;
+  --pink-team: #FFB6C1;
   --neutral: #888888;
-  --trap: #ff4400;
+  --trap: #8B0000;
   --background: #0a0a0f;
   --panel-bg: rgba(255, 255, 255, 0.05);
   --border: rgba(255, 255, 255, 0.1);
   --primary-glow: rgba(0, 136, 255, 0.3);
-  --pink-glow: rgba(255, 0, 136, 0.3);
+  --pink-glow: rgba(255, 182, 193, 0.3);
 }
 
 * {
@@ -205,9 +205,9 @@ body {
 }
 
 .tile-reveal-overlay.blue { background: rgba(0, 136, 255, 0.8); }
-.tile-reveal-overlay.pink { background: rgba(255, 0, 136, 0.8); }
+.tile-reveal-overlay.pink { background: rgba(255, 182, 193, 0.8); }
 .tile-reveal-overlay.neutral { background: rgba(136, 136, 136, 0.8); }
-.tile-reveal-overlay.trap { background: rgba(255, 68, 0, 0.8); }
+.tile-reveal-overlay.trap { background: rgba(139, 0, 0, 0.8); }
 
 .tile-reveal-overlay svg {
   color: white;

@@ -284,8 +284,8 @@ function App() {
             </ul>
           </div>
           <div style={{ flex: 1, minWidth: '300px' }}>
-            <h2>Pink Team (Women)</h2>
-            <button className="btn btn-secondary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('pink')}>Join Pink</button>
+            <h2>Baby Pink Team (Women)</h2>
+            <button className="btn btn-secondary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('pink')}>Join Baby Pink</button>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'pink').map(([id, p]) => (
                 <li key={id} style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -326,7 +326,7 @@ function App() {
                 style={{ padding: '0.5rem 1rem' }}
                 onClick={() => handleSetStartingTeam(gameState?.starting_team_pref === 'blue' ? 'pink' : 'blue')}
               >
-                {gameState?.starting_team_pref === 'blue' ? 'MEN (Blue)' : 'WOMEN (Pink)'}
+                {gameState?.starting_team_pref === 'blue' ? 'MEN (Blue)' : 'WOMEN (Baby Pink)'}
               </button>
             </div>
           </div>
@@ -426,8 +426,8 @@ function App() {
                   ))}
                 </div>
 
-                {/* Visual hint for Captain or Host Role (bottom bar) */}
-                {(isCaptain || isHostRole) && !tile.revealed && (
+                {/* Visual hint for Captain only (bottom bar) */}
+                {isCaptain && !tile.revealed && (
                   <div style={{ position: 'absolute', bottom: 5, width: '100%', height: '8px', background: `var(--${tile.type}-team, var(--${tile.type}))`, borderRadius: '4px' }} />
                 )}
               </div>
