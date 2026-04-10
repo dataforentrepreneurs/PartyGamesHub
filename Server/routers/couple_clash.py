@@ -117,10 +117,14 @@ async def websocket_endpoint(
                     })
 
             elif event == "vote_tile":
-                tile_id = message.get("tile_id")
                 player_data = room.players.get(player_id, {})
                 player_team = player_data.get("team")
                 
+                # Captains cannot vote
+                if player_id == room.blue_captain or player_id == room.pink_captain:
+                    print(f"DEBUG: Vote IGNORED - {name} is a Captain.")
+                    continue
+
                 # Only the team whose turn it is can vote
                 if player_team == room.current_turn:
                     tile_id = str(message.get("tile_id"))
@@ -144,9 +148,11 @@ async def websocket_endpoint(
 
             elif event == "reveal_tile":
                 tile_id = message.get("tile_id")
+                print(f"DEBUG: Host {name} is attempting to reveal tile {tile_id}")
                 if tile_id is not None:
                     result = room.reveal_tile(tile_id)
                     if "error" not in result:
+                        print(f"DEBUG: Reveal SUCCESS for tile {tile_id}")
                         await manager.broadcast_to_room(room_code, {
                             "event": "tile_revealed",
                             "tile_id": tile_id,
@@ -154,6 +160,7 @@ async def websocket_endpoint(
                             "state": room.to_dict()
                         })
                     else:
+                        print(f"DEBUG: Reveal FAILED: {result['error']}")
                         await websocket.send_text(json.dumps({
                             "event": "error",
                             "message": result["error"]

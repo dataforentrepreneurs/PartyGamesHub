@@ -65,7 +65,8 @@ function App() {
   const [view, setView] = useState<'landing' | 'lobby' | 'game' | 'game_over'>('landing');
   const [roomCode, setRoomCode] = useState('');
   const [playerName, setPlayerName] = useState(localStorage.getItem('cc_player_name') || '');
-  const [playerId] = useState(generatePlayerId());
+  const [playerId, setPlayerId] = useState(generatePlayerId());
+  const playerIdRef = useRef(playerId); // CRITICAL: Ref for WebSocket closure
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isHostUser, setIsHostUser] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -104,7 +105,11 @@ function App() {
       console.log("DEBUG: Received message:", data.event);
       if (data.event === 'sync_state' || data.event === 'game_started' || data.event === 'clue_submitted' || data.event === 'tile_revealed' || data.event === 'turn_ended' || data.event === 'game_reset') {
         setGameState(data.state);
-        setIsHostUser(data.is_host || (data.state.host_id === playerId));
+        
+        // Prioritize server-sent is_host, fallback to ID comparison using the latest REF
+        const amIHost = data.is_host === true || data.state.host_id === playerIdRef.current;
+        setIsHostUser(amIHost);
+        
         if (data.state.status === 'LOBBY') setView('lobby');
         else if (data.state.status === 'GAME_OVER') setView('game_over');
         else setView('game');
@@ -145,9 +150,10 @@ function App() {
       
       // CRITICAL: Store the host_id from the server so the WebSocket recognizes us as Host
       localStorage.setItem('cc_player_id', data.host_id);
-      // We also need to refresh the page or state to use this new ID
+      setPlayerId(data.host_id); 
+      playerIdRef.current = data.host_id; // Sync the Ref immediately!
+      
       setRoomCode(data.room_code);
-      // Re-trigger the connect with the new ID (it will be read from localStorage or passed)
       connectWebSocket(data.room_code, data.host_id);
     } catch (e) {
       console.error("DEBUG: handleCreateRoom FAILED:", e);
@@ -322,10 +328,21 @@ function App() {
               key={tile.id} 
               className={`tile`}
               onClick={() => {
+                const currentRole = isHostRole ? 'Host' : (isCaptain ? 'Captain' : 'Player');
+                console.log(`DEBUG: Tile ${tile.id} clicked. role: ${currentRole}, myId: ${playerIdRef.current}, hostId: ${gameState?.host_id}, phase: ${gameState?.turn_phase}`);
+                
                 if (tile.revealed) return;
-                // TV Host (Creator) reveals, others vote
-                if (isHostRole) handleRevealTile(tile.id);
-                else handleVoteTile(tile.id);
+
+                // TV Host (Creator) reveals
+                if (isHostRole) {
+                  handleRevealTile(tile.id);
+                } 
+                // Players vote (only if NOT a captain)
+                else if (!isCaptain) {
+                  handleVoteTile(tile.id);
+                } else {
+                  console.log("DEBUG: Vote ignored - Captains cannot vote.");
+                }
               }}
             >
               <div className="tile-front" style={{ position: 'relative' }}>
