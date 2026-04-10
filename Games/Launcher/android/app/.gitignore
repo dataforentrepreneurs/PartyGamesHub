@@ -1,2 +1,16 @@
 /build/*
 !/build/.npmkeep
+
+# Ignore the virtual environment
+.venv/
+venv/
+env/
+
+# Ignore environment variables / secrets
+.env
+*.env
+secrets.json
+
+# Ignore Python cache
+__pycache__/
+*.pyc

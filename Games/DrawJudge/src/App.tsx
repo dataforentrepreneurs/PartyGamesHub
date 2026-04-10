@@ -5,7 +5,7 @@ import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
 import posthog from 'posthog-js';
 import DrawCanvas from './DrawCanvas';
-import mainLogo from './assets/gold.svg';
+import mainLogo from './assets/gold.png';
 
 const playTickSound = () => {
   try {
@@ -51,14 +51,14 @@ const getDynamicHost = () => {
     return currentHost;
   }
   
-  // Default to your local IP for TV/Chromecast testing at home
-  return '192.168.1.25:8000';
+  // Default to your Render backend for production TV/mobile connectivity
+  return 'party-games-hub-0qly.onrender.com';
 };
 
 const backendHost = getDynamicHost();
 
 // Helper to determine if we should use secure protocols
-const isSecure = window.location.protocol === 'https:' || (!backendHost.includes('192.168.') && !backendHost.includes('localhost') && !backendHost.includes('127.0.0.1'));
+const isSecure = true; // Force true for Render backend (HTTPS/WSS)
 const protocol = isSecure ? 'https' : 'http';
 const wsProtocol = isSecure ? 'wss' : 'ws';
 
