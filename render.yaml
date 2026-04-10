@@ -25,13 +25,18 @@ services:
       - key: PYTHON_VERSION
         value: 3.11.0
       - key: REDIS_URL
-        fromRedis:
+        fromService:
+          type: keyvalue
           name: party-games-redis
           property: connectionString
       - key: SENTRY_DSN
-        sync: false # User should provide this in Render dashboard
+        sync: false
       - key: GEMINI_API_KEY
-        sync: false # User should provide this in Render dashboard
+        sync: false
+      - key: POSTHOG_API_KEY
+        sync: false
+      - key: POSTHOG_HOST
+        value: https://us.i.posthog.com
       - key: ENVIRONMENT
         value: production
       - key: LAUNCHER_DIST
@@ -40,7 +45,7 @@ services:
         value: /opt/render/project/src/Games/DrawJudge/dist
 
   # Redis instance for persistence
-  - type: redis
+  - type: keyvalue
     name: party-games-redis
     ipAllowList: [] # Only allow internal connections
     plan: free # Change to 'starter' for persistence across restarts in free tier
