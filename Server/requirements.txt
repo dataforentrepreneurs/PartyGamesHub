@@ -10,3 +10,4 @@ redis
 fakeredis
 posthog
 google-generativeai
+sentry-sdk[fastapi]

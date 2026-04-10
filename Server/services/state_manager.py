@@ -76,7 +76,7 @@ class RoomState:
         self.save()
 
     def to_dict_lite(self) -> Dict[str, Any]:
-        """Serializes the class but STRIPS all heavy Base64 image data to protect 25MB Redis limit."""
+        """Serializes the class but STRIPS all heavy Base64 image data to protect Redis single-key limits."""
         data = {
             "room_code": self.room_code,
             "host_id": self.host_id,
@@ -93,11 +93,11 @@ class RoomState:
             "round_participants": self.round_participants,
             "last_round_summary": self.last_round_summary,
             "last_winner_explanation": self.last_winner_explanation,
-            "submissions": {},
-            "player_history": {}
+            "submissions": {}, # Images stored separately
+            "player_history": {} # Images stored separately
         }
         
-        # Clone submissions but remove 'image'
+        # Clone submissions but remove 'image' for the lite core state
         for pid, sub in self.submissions.items():
             lite_sub = sub.copy()
             if "image" in lite_sub:
@@ -115,6 +115,32 @@ class RoomState:
             data["player_history"][pid] = lite_history
             
         return data
+
+    def get_images_dict(self) -> Dict[str, str]:
+        """Extracts all current images from submissions and history."""
+        images = {}
+        for pid, sub in self.submissions.items():
+            if sub.get("image"):
+                images[f"sub:{pid}"] = sub["image"]
+        for pid, history in self.player_history.items():
+            for i, entry in enumerate(history):
+                if entry.get("image"):
+                    images[f"hist:{pid}:{i}"] = entry["image"]
+        return images
+
+    def load_images_dict(self, images: Dict[str, str]):
+        """Re-injects images into the state."""
+        for key, img in images.items():
+            if key.startswith("sub:"):
+                pid = key.replace("sub:", "")
+                if pid in self.submissions:
+                    self.submissions[pid]["image"] = img
+            elif key.startswith("hist:"):
+                parts = key.split(":")
+                pid = parts[1]
+                idx = int(parts[2])
+                if pid in self.player_history and len(self.player_history[pid]) > idx:
+                    self.player_history[pid][idx]["image"] = img
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'RoomState':
@@ -143,11 +169,19 @@ class RoomState:
 active_rooms: Dict[str, RoomState] = {}
 
 def save_room_state(room: RoomState):
-    """Saves the lite state to Redis with a 1-hour TTL."""
+    """Saves the lite state and images to Redis with a 1-hour TTL."""
     if redis_client:
         try:
+            # Save lite state
             lite_data = room.to_dict_lite()
-            redis_client.set(f"room:{room.room_code}", json.dumps(lite_data), ex=3600)
+            redis_prefix = f"room:{room.room_code}"
+            redis_client.set(redis_prefix, json.dumps(lite_data), ex=3600)
+            
+            # Save images in a separate hash to stay efficient
+            images = room.get_images_dict()
+            if images:
+                redis_client.hset(f"{redis_prefix}:images", mapping=images)
+                redis_client.expire(f"{redis_prefix}:images", 3600)
         except Exception as e:
             print(f"Redis Save Error: {e}")
 
@@ -169,10 +203,21 @@ def get_room_state(room_code: str) -> Optional[RoomState]:
     # If not in memory but we have Redis (Server crashed & restarted)
     if redis_client:
         try:
-            data_str = redis_client.get(f"room:{room_code}")
+            redis_prefix = f"room:{room_code}"
+            data_str = redis_client.get(redis_prefix)
             if data_str:
                 data = json.loads(data_str)
                 room = RoomState.from_dict(data)
+                
+                # Load images back
+                images = redis_client.hgetall(f"{redis_prefix}:images")
+                if images:
+                    # Redis returns bytes, so convert to string
+                    images_str = {k.decode('utf-8') if isinstance(k, bytes) else k: 
+                                 v.decode('utf-8') if isinstance(v, bytes) else v 
+                                 for k,v in images.items()}
+                    room.load_images_dict(images_str)
+                    
                 active_rooms[room_code] = room
                 return room
         except Exception as e:

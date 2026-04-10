@@ -1,8 +1,46 @@
 services:
+  # Main Backend Service (serving API + Frontends)
   - type: web
-    name: drawjudge
-    env: docker
-    plan: free
+    name: party-games-hub
+    env: python
+    buildCommand: |
+      # Install python dependencies
+      pip install -r Server/requirements.txt
+      
+      # Build Launcher Frontend
+      cd Games/Launcher
+      npm install
+      npm run build
+      cd ../..
+      
+      # Build DrawJudge Frontend
+      cd Games/DrawJudge
+      npm install
+      npm run build
+      cd ../..
+    startCommand: |
+      cd Server
+      python -m uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: REDIS_URL
+        fromRedis:
+          name: party-games-redis
+          property: connectionString
+      - key: SENTRY_DSN
+        sync: false # User should provide this in Render dashboard
       - key: GEMINI_API_KEY
-        sync: false
+        sync: false # User should provide this in Render dashboard
+      - key: ENVIRONMENT
+        value: production
+      - key: LAUNCHER_DIST
+        value: /opt/render/project/src/Games/Launcher/dist
+      - key: DRAWJUDGE_DIST
+        value: /opt/render/project/src/Games/DrawJudge/dist
+
+  # Redis instance for persistence
+  - type: redis
+    name: party-games-redis
+    ipAllowList: [] # Only allow internal connections
+    plan: free # Change to 'starter' for persistence across restarts in free tier

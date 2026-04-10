@@ -1,3 +1,5 @@
+println "GRADLE_SYNC_DIAGNOSTIC: Using JVM ${System.getProperty('java.version')} (${System.getProperty('java.home')})"
+
 // Top-level build file where you can add configuration options common to all sub-projects/modules.
 
 buildscript {

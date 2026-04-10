@@ -9,6 +9,7 @@ import os
 import random
 import time
 import posthog
+import sentry_sdk
 from posthog import Posthog
 
 # Attempt to load frontend .env for the API key if missing locally
@@ -139,6 +140,11 @@ async def websocket_endpoint(
     name: str = Query(...)
 ):
     room_code = room_code.upper()
+    
+    # Tag Sentry for multiplayer debugging
+    sentry_sdk.set_tag("room_code", room_code)
+    sentry_sdk.set_tag("player_id", player_id)
+    
     room = get_room_state(room_code)
     
     if not room:
