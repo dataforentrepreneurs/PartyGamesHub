@@ -33,6 +33,12 @@ body {
   padding: 2rem;
 }
 
+.host-view {
+  padding: 0.5rem;
+  overflow: hidden; /* Prevent scroll on TV */
+  height: 100vh;
+}
+
 /* Glassmorphism */
 .glass-panel {
   background: var(--panel-bg);
@@ -44,6 +50,15 @@ body {
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   width: 100%;
   max-width: 1200px;
+}
+
+.host-view .glass-panel {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.5rem !important;
+}
+
+.host-view .glass-panel h2 {
+  font-size: 1.2rem;
 }
 
 .title-giant {
@@ -58,11 +73,21 @@ body {
   text-align: center;
 }
 
+.host-view .title-giant {
+  font-size: 1.8rem;
+  margin-bottom: 0.2rem;
+}
+
 .subtitle {
   font-size: 1.25rem;
   color: hsla(0, 0%, 100%, 0.7);
   margin-bottom: 2rem;
   text-align: center;
+}
+
+.host-view .subtitle {
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
 }
 
 .btn {
@@ -111,6 +136,13 @@ body {
   perspective: 1000px;
 }
 
+.host-view .game-grid {
+  margin-top: 0.2rem;
+  gap: 6px;
+  max-height: 65vh;
+  padding: 0 10px;
+}
+
 .tile {
   aspect-ratio: 1/1;
   position: relative;
@@ -119,6 +151,18 @@ body {
   transform-style: preserve-3d;
   border-radius: 12px;
   overflow: hidden;
+}
+
+.host-view .tile {
+  /* Scale tiles to ensure 5 rows fit in 65vh */
+  max-height: calc(13vh - 8px);
+  width: auto;
+  margin: 0 auto;
+}
+
+.host-view .tile-front img {
+  max-height: 90%;
+  width: auto;
 }
 
 .tile.revealed {

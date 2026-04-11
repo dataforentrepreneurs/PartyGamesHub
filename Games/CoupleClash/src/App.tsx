@@ -349,7 +349,7 @@ function App() {
   const isHostRole = isHostUser;
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
       <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', marginBottom: '1rem' }}>
         <div style={{ color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)', fontWeight: 900, fontSize: '1.5rem' }}>
           {gameState?.current_turn.toUpperCase()}'S TURN ({formatTime(elapsed)})
