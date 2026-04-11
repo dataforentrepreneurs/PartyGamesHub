@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Heart, Bomb, ArrowRight, User } from 'lucide-react';
+import { Play, Heart, Bomb, ArrowRight, User, X } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import './App.css';
 
@@ -44,21 +44,27 @@ interface GameState {
 const getDynamicHost = () => {
   const envUrl = import.meta.env.VITE_BACKEND_URL;
   if (envUrl) return envUrl;
+
   const currentHost = window.location.host;
+  // If we are running on a standard web host (like Render), use that
   if (currentHost && !currentHost.includes('localhost') && !currentHost.startsWith('127.0.0.1')) {
     return currentHost;
   }
-  // Default to your Render backend for production TV/mobile connectivity
+
+  const isNative = (window as any).Capacitor?.isNativePlatform;
+  // If running on Android/TV (Native Capacitor), ALWAYS use Render
+  if (isNative) {
+    return 'party-games-hub-0qly.onrender.com';
+  }
+
+  // Only use localhost if we are in a desktop browser for development (Vite usually uses 5173)
+  if (currentHost && (currentHost.includes('localhost:5173') || currentHost.includes('127.0.0.1:5173'))) {
+    return 'localhost:8000';
+  }
+
+  // Fallback for everything else (Native, TV, or Production)
   return 'party-games-hub-0qly.onrender.com';
 };
-
-const backendHost = getDynamicHost();
-const isSecure = true; // Force true for Render backend (HTTPS/WSS)
-const protocol = isSecure ? 'https' : 'http';
-const wsProtocol = isSecure ? 'wss' : 'ws';
-
-const API_BASE = `${protocol}://${backendHost}/api/coupleclash`;
-const WS_BASE = `${wsProtocol}://${backendHost}/ws/coupleclash/rooms`;
 
 function generatePlayerId() {
   const existing = localStorage.getItem('cc_player_id');
@@ -69,6 +75,18 @@ function generatePlayerId() {
 }
 
 function App() {
+  const [backendConfig] = useState(() => {
+    const host = getDynamicHost();
+    const isSecure = !host.includes('localhost') && !host.startsWith('127.0.0.1');
+    const protocol = isSecure ? 'https' : 'http';
+    const wsProtocol = isSecure ? 'wss' : 'ws';
+    return {
+      host,
+      apiBase: `${protocol}://${host}/api/coupleclash`,
+      wsBase: `${wsProtocol}://${host}/ws/coupleclash/rooms`
+    };
+  });
+
   const [view, setView] = useState<'landing' | 'lobby' | 'game' | 'game_over'>('landing');
   const [roomCode, setRoomCode] = useState('');
   const [playerName, setPlayerName] = useState(localStorage.getItem('cc_player_name') || '');
@@ -102,7 +120,7 @@ function App() {
   // --- WebSocket Logic ---
   const connectWebSocket = (code: string, overrideId?: string) => {
     const activeId = overrideId || playerId;
-    const socket = new WebSocket(`${WS_BASE}/${code}?player_id=${activeId}&name=${encodeURIComponent(playerName)}`);
+    const socket = new WebSocket(`${backendConfig.wsBase}/${code}?player_id=${activeId}&name=${encodeURIComponent(playerName)}`);
     ws.current = socket;
 
     socket.onopen = () => {
@@ -163,7 +181,7 @@ function App() {
   const handleCreateRoom = async () => {
     console.log("DEBUG: handleCreateRoom clicked");
     try {
-      const url = `${API_BASE}/rooms`;
+      const url = `${backendConfig.apiBase}/rooms`;
       console.log(`DEBUG: POST calling ${url}`);
       const res = await fetch(url, { method: 'POST' });
       
@@ -183,7 +201,7 @@ function App() {
       connectWebSocket(data.room_code, data.host_id);
     } catch (e: any) {
       console.error("DEBUG: handleCreateRoom FAILED:", e);
-      const url = `${API_BASE}/rooms`;
+      const url = `${backendConfig.apiBase}/rooms`;
       alert(`Failed to create room! URL: ${url}. Error: ${e.message || e}`);
     }
   };
@@ -416,7 +434,7 @@ function App() {
                 {/* Reveal Overlay (80% opaque color) */}
                 {tile.revealed && (
                   <div className={`tile-reveal-overlay ${tile.type}`}>
-                    {tile.type === 'trap' ? <Bomb size={48} /> : (tile.type === 'neutral' ? null : <Heart size={48} />)}
+                    {tile.type === 'trap' ? <Bomb size={48} /> : (tile.type === 'neutral' ? <X size={48} /> : <Heart size={48} />)}
                   </div>
                 )}
                 

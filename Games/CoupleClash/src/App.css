@@ -1,7 +1,7 @@
 :root {
   --blue-team: #0088ff;
   --pink-team: #FFB6C1;
-  --neutral: #888888;
+  --neutral: #ffffff;
   --trap: #8B0000;
   --background: #0a0a0f;
   --panel-bg: rgba(255, 255, 255, 0.05);
@@ -181,14 +181,19 @@ body {
 }
 
 .tile-front {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.host-view .tile-front {
+  border: none;
 }
 
 .tile-front img {
-  width: 80%;
-  height: 80%;
+  width: 90%;
+  height: 90%;
   object-fit: contain;
+  filter: drop-shadow(0 5px 15px rgba(0,0,0,0.3));
 }
 
 .tile-back {

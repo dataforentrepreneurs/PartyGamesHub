@@ -16,27 +16,52 @@ except ImportError:
 
 MODE_KEYWORDS = {
     "classic": [
-        "pizza", "bicycle", "beach", "mountain", "coffee", "guitar", "elephant", "airplane",
-        "camera", "umbrella", "sunflower", "bridge", "library", "forest", "desert", "waterfall",
-        "statue", "market", "castle", "skyscraper", "train", "ship", "island", "volcano", "galaxy",
-        "robot", "scientist", "chef", "doctor", "astronaut", "firefighter", "policeman", "teacher"
+        "Pizza", "Bicycle", "Beach with umbrella", "Snow-capped mountain", "Hot beverage", "Guitar", "Elephant", "Airplane",
+        "Camera", "Umbrella", "Sunflower", "Bridge at night", "Books", "Deciduous tree", "Desert", "Water wave",
+        "Statue of liberty", "Shopping cart", "Castle", "Office building", "Locomotive", "Ship", "Desert island", "Volcano", "Milky way",
+        "Robot", "Woman scientist", "Woman cook", "Woman health worker", "Woman astronaut", "Woman firefighter", "Woman police officer", "Woman teacher"
     ],
     "couples": [
-        "wedding", "ring", "heart", "kiss", "roses", "date", "dinner", "proposal", "honeymoon", "embrace", 
-        "sunset", "beach", "balcony", "champagne", "gift", "candle", "serenade", "letter", "lock", "swing", 
-        "picnic", "dance", "holding-hands", "eternity", "vows", "chocolate", "fireplace", "diamond", "hug"
+        "Wedding", "Ring", "Heart with ribbon", "Kiss mark", "Rose", "Wine glass", "Fork and knife", "Ring", "Luggage", "Two hearts", 
+        "Sunset", "Beach with umbrella", "Couch and lamp", "Champagne glass", "Wrapped gift", "Candle", "Musical note", "Love letter", "Locked with Heart", "Ferris wheel", 
+        "Basket", "Woman dancing", "Handshake", "Hourglass done", "Sparkler", "Chocolate bar", "Fire", "Sparkles", "Smiling face with hearts"
     ],
     "bollywood": [
-        "cinema", "actor", "dance", "sari", "popcorn", "camera", "director", "action", "script", "stage", 
-        "spotlight", "hero", "villain", "musical", "celebrity", "red-carpet", "award", "fans", "stardom", 
-        "makeup", "studio", "Sholay", "Pathaan", "Dilwale", "Lagaan", "RRR", "Bahubali", "Jawan", "Don"
+        "Movie camera", "Man dancing", "Woman dancing", "Sari", "Popcorn", "Video camera", "Clapper board", "Direct Hit", "Scroll", "Performing arts", 
+        "Studio Light", "Person supervillain", "Person superhero", "Musical score", "Star", "Admission tickets", "Trophy", "Hand with fingers splayed", "Sunglasses", 
+        "Lipstick", "Artist palette", "Crown", "Gem stone", "Fire", "Person wearing turban", "Elephant", "Tiger", "Peacock", "Lotus"
     ],
     "kids": [
-        "cat", "dog", "apple", "sun", "moon", "star", "ball", "car", "tree", "house", 
-        "flower", "bird", "toy", "doll", "balloon", "cake", "icecream", "butterfly", "fish", "rainbow", 
-        "elephant", "lion", "rabbit", "bear", "duck", "monkey", "giraffe", "zebra", "turtle"
+        "Cat", "Dog", "Red apple", "Sun with face", "Full moon", "Glowing star", "Soccer ball", "Automobile", "Evergreen tree", "House", 
+        "Hibiscus", "Bird", "Teddy bear", "Baby chick", "Balloon", "Birthday cake", "Ice cream", "Butterfly", "Tropical fish", "Rainbow", 
+        "Elephant", "Lion", "Rabbit", "Bear", "Duck", "Monkey", "Giraffe", "Zebra", "Turtle"
     ]
 }
+
+def get_emoji_url(keyword: str) -> str:
+    """
+    Constructs a 3D Fluent Emoji URL.
+    Handles standard objects: assets/{Folder}/3D/{file}_3d.png
+    Handles people/jobs: assets/{Folder}/Default/3D/{file}_3d_default.png
+    """
+    folder = keyword.replace(" ", "%20")
+    # Base filename is lowercase with underscores
+    base_file = keyword.lower().replace(" ", "_").replace("-", "_")
+    
+    # Heuristic for people/jobs that use the 'Default' skin tone path
+    people_keywords = ["Woman", "Man", "Person", "Hand", "Fingers", "Handshake"]
+    is_people = any(p in keyword for p in people_keywords)
+    
+    # Special Handling for Snow-capped mountain (has hyphen)
+    if keyword == "Snow-capped mountain":
+        return "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/Snow-capped%20mountain/3D/snow-capped_mountain_3d.png"
+
+    if is_people:
+        # Example: assets/Woman%20scientist/Default/3D/woman_scientist_3d_default.png
+        return f"https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/{folder}/Default/3D/{base_file}_3d_default.png"
+    else:
+        # Example: assets/Pizza/3D/pizza_3d.png
+        return f"https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/{folder}/3D/{base_file}_3d.png"
 
 # Initialize Redis client
 REDIS_URL = os.environ.get("REDIS_URL")
@@ -144,13 +169,7 @@ class CoupleClashRoomState:
         
         self.board = []
         for i, (k, t) in enumerate(zip(selected_keywords, types)):
-            # Use a reliable stock photo service
-            img_url = f"https://images.unsplash.com/photo-1542281286-9e0a16bb7366?auto=format&fit=crop&q=80&w=400&q=keyword={k}"
-            # Actually, let's use a more direct source if possible, but Unsplash featured is okay
-            # Better: https://source.unsplash.com/featured/?{k} (Wait, Source Unsplash is deprecated)
-            # Use https://images.unsplash.com/photo-... based on keywords is hard.
-            # I'll use a placeholder for now and we can improvise the image library.
-            img_url = f"https://loremflickr.com/400/400/{k}?lock={i}"
+            img_url = get_emoji_url(k)
             self.board.append(Tile(i, img_url, t))
             
         self.status = TurnPhase.WAITING_FOR_CLUE

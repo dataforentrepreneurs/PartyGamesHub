@@ -46,34 +46,25 @@ const getDynamicHost = () => {
   if (envUrl) return envUrl;
   
   const currentHost = window.location.host;
-  // If we are running on a standard web host (like Render), use the current host
+
+  // If we are running on a standard web host (like Render), use that
   if (currentHost && !currentHost.includes('localhost') && !currentHost.startsWith('127.0.0.1')) {
     return currentHost;
+  }
+
+  const isNative = (window as any).Capacitor?.isNativePlatform;
+  // If running on Android/TV (Native Capacitor), ALWAYS use Render
+  if (isNative) {
+    return 'party-games-hub-0qly.onrender.com';
+  }
+
+  // Only use localhost if we are in a desktop browser for development (Vite usually uses 5173)
+  if (currentHost && (currentHost.includes('localhost:5173') || currentHost.includes('127.0.0.1:5173'))) {
+    return 'localhost:8000';
   }
   
   // Default to your Render backend for production TV/mobile connectivity
   return 'party-games-hub-0qly.onrender.com';
-};
-
-const backendHost = getDynamicHost();
-
-// Helper to determine if we should use secure protocols
-const isSecure = true; // Force true for Render backend (HTTPS/WSS)
-const protocol = isSecure ? 'https' : 'http';
-const wsProtocol = isSecure ? 'wss' : 'ws';
-
-const API_BASE = backendHost.startsWith('http')
-  ? `${backendHost}/api/drawjudge`
-  : `${protocol}://${backendHost}/api/drawjudge`;
-
-const WS_BASE = backendHost.startsWith('http')
-  ? backendHost.replace('http', 'ws') + '/ws/drawjudge/rooms'
-  : `${wsProtocol}://${backendHost}/ws/drawjudge/rooms`;
-
-// Helper for QR Code URLs
-const getJoinUrl = (code: string) => {
-  const host = backendHost.startsWith('http') ? backendHost : `${protocol}://${backendHost}`;
-  return `${host}/drawjudge/?room=${code}`;
 };
 
 function generatePlayerId() {
@@ -85,6 +76,20 @@ function generatePlayerId() {
 }
 
 function App() {
+  const [backendConfig] = useState(() => {
+    const host = getDynamicHost();
+    const isSecure = !host.includes('localhost') && !host.startsWith('127.0.0.1');
+    const protocol = isSecure ? 'https' : 'http';
+    const wsProtocol = isSecure ? 'wss' : 'ws';
+    const apiBase = host.startsWith('http') ? `${host}/api/drawjudge` : `${protocol}://${host}/api/drawjudge`;
+    const wsBase = host.startsWith('http') ? host.replace('http', 'ws') + '/ws/drawjudge/rooms' : `${wsProtocol}://${host}/ws/drawjudge/rooms`;
+    const getJoinUrl = (code: string) => {
+      const h = host.startsWith('http') ? host : `${protocol}://${host}`;
+      return `${h}/drawjudge/?room=${code}`;
+    };
+    return { host, apiBase, wsBase, getJoinUrl };
+  });
+
   const [view, setView] = useState<'landing' | 'join' | 'hostLobby' | 'playerLobby' | 'drawing' | 'judging' | 'results' | 'leaderboard'>('landing');
   const [roomCode, setRoomCode] = useState('');
   const [playerName, setPlayerName] = useState(localStorage.getItem('dj_player_name') || '');
@@ -139,7 +144,7 @@ function App() {
   const connectWebSocket = (code: string, isHost: boolean, overridePlayerId: string) => {
     setIsHostUser(isHost);
     const name = isHost ? "Host" : playerName;
-    const socket = new WebSocket(`${WS_BASE}/${code}?player_id=${overridePlayerId}&name=${encodeURIComponent(name)}`);
+    const socket = new WebSocket(`${backendConfig.wsBase}/${code}?player_id=${overridePlayerId}&name=${encodeURIComponent(name)}`);
     ws.current = socket;
 
     // Render/Heroku drop idle sockets after 60s. Heartbeat prevents this perfectly:
@@ -151,7 +156,7 @@ function App() {
 
     // Prevent Render's free tier HTTP Spin-Down Bug
     const keepAliveInterval = setInterval(() => {
-      fetch(`${API_BASE}/rooms/fake-keep-alive`).catch(() => { });
+      fetch(`${backendConfig.apiBase}/rooms/fake-keep-alive`).catch(() => { });
     }, 5 * 60 * 1000); // 5 minutes
 
     socket.onclose = () => {
@@ -367,7 +372,7 @@ function App() {
 
   const testConnection = async () => {
     setIsTesting(true);
-    const testUrl = `http://192.168.1.25:8000/api/health`;
+    const testUrl = `${backendConfig.apiBase.replace('/drawjudge', '')}/health`;
     console.log("Testing connection to:", testUrl);
     try {
       const res = await fetch(testUrl);
@@ -382,7 +387,7 @@ function App() {
   };
 
   const handleCreateRoom = async () => {
-    const url = `${API_BASE}/rooms`;
+    const url = `${backendConfig.apiBase}/rooms`;
     console.log("Attempting to create room at:", url);
     try {
       const res = await fetch(url, { method: 'POST' });
@@ -501,10 +506,10 @@ function App() {
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (
         <div className="glass-panel text-center flex-row" style={{ position: 'absolute', top: '16px', left: '16px', padding: '12px 24px', zIndex: 50, border: '2px solid var(--primary)', alignItems: 'center', gap: '16px' }}>
           <div style={{ background: 'white', padding: '4px', borderRadius: '8px' }}>
-            <QRCodeSVG value={getJoinUrl(roomCode)} size={60} />
+            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={60} />
           </div>
           <div className="flex-col text-left">
-            <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {backendHost}/drawjudge</span>
+            <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {backendConfig.host}/drawjudge</span>
             <span style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1 }}>Code: <span className="text-primary">{roomCode}</span></span>
           </div>
         </div>
@@ -542,9 +547,9 @@ function App() {
         <div className="glass-panel flex-col items-center">
           <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '4px' }}>ROOM CODE</h2>
           <h1 style={{ fontSize: '4rem', fontWeight: 900, color: 'var(--primary)', textShadow: '0 0 20px hsla(320,90%,65%,0.5)', letterSpacing: '4px' }}>{roomCode}</h1>
-          <p className="subtitle" style={{ marginBottom: '0', color: 'hsla(0,0%,100%,0.8)' }}>Open <b>{backendHost}/drawjudge</b> and enter this code to Join!</p>
+          <p className="subtitle" style={{ marginBottom: '0', color: 'hsla(0,0%,100%,0.8)' }}>Open <b>{backendConfig.host}/drawjudge</b> and enter this code to Join!</p>
           <div className="mb-4 mt-2 p-4" style={{ background: 'white', borderRadius: '16px' }}>
-            <QRCodeSVG value={getJoinUrl(roomCode)} size={160} />
+            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={160} />
           </div>
 
           <div className="flex-row w-full mb-4" style={{ gap: '16px' }}>
