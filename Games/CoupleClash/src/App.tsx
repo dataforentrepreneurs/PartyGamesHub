@@ -472,38 +472,44 @@ function App() {
 
   return (
     <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
-      {/* Persistent Room Info for Host */}
-      {isHostUser && (
-        <div
-          className="glass-panel"
-          style={{
-            position: 'absolute',
-            bottom: '20px',
-            left: '20px',
-            padding: '12px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            zIndex: 100,
-            border: '2px solid rgba(255,255,255,0.1)',
-            background: 'rgba(0,0,0,0.6)',
-            backdropFilter: 'blur(10px)'
-          }}
-        >
-          <div style={{ background: 'white', padding: '4px', borderRadius: '4px' }}>
-            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={50} />
-          </div>
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '0.7rem', opacity: 0.7, fontWeight: 700, textTransform: 'uppercase' }}>Join at {backendConfig.host}/coupleclash</div>
-            <div style={{ fontSize: '1.2rem', fontWeight: 900 }}>Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></div>
-          </div>
+      {/* Game HUD Header */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr auto 1fr', 
+        alignItems: 'center', 
+        width: '100%', 
+        maxWidth: '1200px', 
+        marginBottom: '1rem',
+        padding: '0 1rem'
+      }}>
+        {/* Column 1: Room Info (Left) */}
+        <div style={{ justifySelf: 'start' }}>
+          {isHostUser && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ background: 'white', padding: '2px', borderRadius: '4px', display: 'flex' }}>
+                <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={40} />
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 700 }}>Scan to Join</div>
+                <div style={{ fontSize: '1rem', fontWeight: 900 }}>Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></div>
+              </div>
+            </div>
+          )}
         </div>
-      )}
-      <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', maxWidth: '1200px', marginBottom: '1rem' }}>
-        <div style={{ color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)', fontWeight: 900, fontSize: '1.5rem' }}>
+
+        {/* Column 2: Turn Indicator (Center) */}
+        <div style={{ 
+          color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)', 
+          fontWeight: 900, 
+          fontSize: '1.5rem',
+          textAlign: 'center',
+          textShadow: '0 0 20px rgba(0,0,0,0.5)'
+        }}>
           {gameState?.current_turn.toUpperCase()}'S TURN ({formatTime(elapsed)})
         </div>
-        <div style={{ textAlign: 'right' }}>
+
+        {/* Column 3: Scores (Right) */}
+        <div style={{ justifySelf: 'end', textAlign: 'right' }}>
           <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
             <span style={{ color: 'var(--blue-team)' }}>{gameState?.scores.blue}</span> ({formatTime(gameState?.team_times.blue || 0)})
             {" - "}
