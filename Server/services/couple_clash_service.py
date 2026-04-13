@@ -207,7 +207,7 @@ class CoupleClashRoomState:
         if self.turn_phase == TurnPhase.WAITING_FOR_CLUE:
             self.clue_word = word
             self.clue_number = number
-            self.guesses_remaining = number + 1
+            self.guesses_remaining = number
             self.turn_phase = TurnPhase.GUESSING
             self.votes = {}
             self.save()

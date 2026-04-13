@@ -295,6 +295,10 @@ function App() {
     ws.current?.send(JSON.stringify({ event: 'set_starting_team', team }));
   };
 
+  const handleEndTurn = () => {
+    ws.current?.send(JSON.stringify({ event: 'end_turn' }));
+  };
+
   // --- Render Helpers ---
   if (view === 'landing') {
     return (
@@ -485,7 +489,17 @@ function App() {
           ) : (
             <div>
               <h2 className="title-giant" style={{ fontSize: '3rem', margin: 0 }}>{gameState?.clue_word} : {gameState?.clue_number}</h2>
-              <p className="subtitle">Guesses remaining: {gameState?.guesses_remaining}</p>
+              <p className="subtitle" style={{ marginBottom: '1rem' }}>Guesses remaining: {gameState?.guesses_remaining}</p>
+              
+              {isHostUser && (
+                <button 
+                  className="btn btn-secondary" 
+                  style={{ padding: '0.5rem 1.5rem', fontSize: '1rem', marginTop: '0.5rem' }} 
+                  onClick={handleEndTurn}
+                >
+                  End {gameState?.current_turn.toUpperCase()} Turn
+                </button>
+              )}
             </div>
           )}
       </div>
