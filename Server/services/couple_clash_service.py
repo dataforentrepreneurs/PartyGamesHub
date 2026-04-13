@@ -22,7 +22,7 @@ MODE_KEYWORDS = {
         "Robot", "Woman scientist", "Woman cook", "Woman health worker", "Woman astronaut", "Woman firefighter", "Woman police officer", "Woman teacher"
     ],
     "couples": [
-        "Wedding", "Ring", "Heart with ribbon", "Kiss mark", "Rose", "Wine glass", "Fork and knife", "Ring", "Luggage", "Two hearts", 
+        "Wedding", "Ring", "Heart with ribbon", "Kiss mark", "Rose", "Wine glass", "Fork and knife", "Luggage", "Two hearts", 
         "Sunset", "Beach with umbrella", "Couch and lamp", "Champagne glass", "Wrapped gift", "Candle", "Musical note", "Love letter", "Locked with Heart", "Ferris wheel", 
         "Basket", "Woman dancing", "Handshake", "Hourglass done", "Sparkler", "Chocolate bar", "Fire", "Sparkles", "Smiling face with hearts"
     ],
@@ -162,8 +162,8 @@ class CoupleClashRoomState:
             
         random.shuffle(types)
         
-        # Mode-specific keywords
-        mode_pool = MODE_KEYWORDS.get(self.game_mode, MODE_KEYWORDS["classic"])
+        # Mode-specific keywords (ensure uniqueness)
+        mode_pool = list(set(MODE_KEYWORDS.get(self.game_mode, MODE_KEYWORDS["classic"])))
         if len(mode_pool) < 25:
             # Fallback/merge if pool is small
             mode_pool = mode_pool + random.sample(MODE_KEYWORDS["classic"], 25 - len(mode_pool))
@@ -189,7 +189,7 @@ class CoupleClashRoomState:
         if not tile or tile.revealed:
             return
 
-        mode_pool = list(MODE_KEYWORDS.get(self.game_mode, MODE_KEYWORDS["classic"]))
+        mode_pool = list(set(MODE_KEYWORDS.get(self.game_mode, MODE_KEYWORDS["classic"])))
         used_keywords = {t.keyword for t in self.board}
         available = [k for k in mode_pool if k not in used_keywords]
 

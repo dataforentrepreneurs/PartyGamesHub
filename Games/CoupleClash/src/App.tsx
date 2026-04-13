@@ -437,7 +437,7 @@ function App() {
           className="glass-panel" 
           style={{ 
             position: 'absolute', 
-            top: '20px', 
+            bottom: '20px', 
             left: '20px', 
             padding: '12px', 
             display: 'flex', 
