@@ -135,6 +135,7 @@ class CoupleClashRoomState:
         self.starting_team_pref = "blue"
         self.team_times = {"blue": 0, "pink": 0}
         self.turn_started_at = 0
+        self.winner = None
 
     def add_player(self, player_id: str, name: str) -> str:
         if player_id not in self.players:
@@ -181,6 +182,7 @@ class CoupleClashRoomState:
         self.scores = {"blue": 0, "pink": 0}
         self.team_times = {"blue": 0, "pink": 0}
         self.turn_started_at = time.time()
+        self.winner = None
         self.save()
 
     def reroll_tile(self, tile_id: int):
@@ -230,6 +232,7 @@ class CoupleClashRoomState:
             self.turn_phase = TurnPhase.GAME_OVER
             result["game_over"] = True
             result["winner"] = "pink" if self.current_turn == "blue" else "blue"
+            self.winner = result["winner"]
         elif tile.type == self.current_turn:
             self.scores[self.current_turn] += 1
             if self.scores[self.current_turn] >= self.max_tiles[self.current_turn]:
@@ -237,6 +240,7 @@ class CoupleClashRoomState:
                 self.turn_phase = TurnPhase.GAME_OVER
                 result["game_over"] = True
                 result["winner"] = self.current_turn
+                self.winner = result["winner"]
             else:
                 self.guesses_remaining -= 1
                 if self.guesses_remaining <= 0:
@@ -251,6 +255,7 @@ class CoupleClashRoomState:
                     self.turn_phase = TurnPhase.GAME_OVER
                     result["game_over"] = True
                     result["winner"] = tile.type
+                    self.winner = result["winner"]
             
             if not result["game_over"]:
                 self.end_turn()
@@ -295,7 +300,8 @@ class CoupleClashRoomState:
             "game_mode": self.game_mode,
             "starting_team_pref": self.starting_team_pref,
             "team_times": self.team_times,
-            "turn_started_at": self.turn_started_at
+            "turn_started_at": self.turn_started_at,
+            "winner": self.winner
         }
 
     @classmethod
@@ -320,6 +326,7 @@ class CoupleClashRoomState:
         room.starting_team_pref = data.get("starting_team_pref", "blue")
         room.team_times = data.get("team_times", {"blue": 0, "pink": 0})
         room.turn_started_at = data.get("turn_started_at", 0)
+        room.winner = data.get("winner")
         
         return room
 

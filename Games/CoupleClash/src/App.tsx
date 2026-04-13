@@ -39,6 +39,7 @@ interface GameState {
   starting_team_pref: string;
   team_times: { blue: number; pink: number };
   turn_started_at: number;
+  winner: 'blue' | 'pink' | null;
 }
 
 // --- Dynamic Host Configuration ---
@@ -299,6 +300,10 @@ function App() {
     ws.current?.send(JSON.stringify({ event: 'end_turn' }));
   };
 
+  const handleResetGame = () => {
+    ws.current?.send(JSON.stringify({ event: 'reset_game' }));
+  };
+
   // --- Render Helpers ---
   if (view === 'landing') {
     return (
@@ -421,6 +426,42 @@ function App() {
             Start Game <ArrowRight size={24} />
           </button>
         )}
+      </div>
+    );
+  }
+
+  if (view === 'game_over') {
+    const winnerName = gameState?.winner === 'blue' ? 'Blue Team' : 'Pink Team';
+    const winnerColor = gameState?.winner === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)';
+    
+    return (
+      <div className="app-container">
+        <div className="animate-float">
+          <h1 className="title-giant" style={{ color: winnerColor }}>{winnerName} Wins!</h1>
+          <p className="subtitle">Congratulations to the victors!</p>
+        </div>
+        
+        <div className="glass-panel" style={{ maxWidth: '600px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginBottom: '2rem' }}>
+            <div>
+              <h2 style={{ color: 'var(--blue-team)' }}>Blue</h2>
+              <div style={{ fontSize: '3rem', fontWeight: 900 }}>{gameState?.scores.blue}</div>
+            </div>
+            <div>
+              <h2 style={{ color: 'var(--pink-team)' }}>Pink</h2>
+              <div style={{ fontSize: '3rem', fontWeight: 900 }}>{gameState?.scores.pink}</div>
+            </div>
+          </div>
+          
+          {isHostUser && (
+            <button className="btn btn-primary" style={{ padding: '1.5rem 4rem' }} onClick={handleResetGame}>
+              Play Again
+            </button>
+          )}
+          {!isHostUser && (
+            <p className="subtitle">Waiting for Host to start a new round...</p>
+          )}
+        </div>
       </div>
     );
   }
