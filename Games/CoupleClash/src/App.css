@@ -67,6 +67,8 @@ body {
   text-transform: uppercase;
   letter-spacing: -2px;
   margin-bottom: 1rem;
+  padding: 0.12em 0;
+  line-height: 1.1;
   background: linear-gradient(to bottom, #fff 0%, #aaa 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -315,6 +317,11 @@ body {
 .input-group {
   display: flex;
   gap: 8px;
+  width: 100%;
+}
+
+.input-group input {
+  min-width: 0;
 }
 
 .input-group-row {

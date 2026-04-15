@@ -26,7 +26,7 @@ MODE_KEYWORDS = {
         "Sunset", "Beach with umbrella", "Couch and lamp", "Champagne glass", "Wrapped gift", "Candle", "Musical note", "Love letter", "Locked with Heart", "Ferris wheel", 
         "Basket", "Woman dancing", "Handshake", "Hourglass done", "Sparkler", "Chocolate bar", "Fire", "Sparkles", "Smiling face with hearts"
     ],
-    "bollywood": [
+    "movies": [
         "Movie camera", "Man dancing", "Woman dancing", "Sari", "Popcorn", "Video camera", "Clapper board", "Direct Hit", "Scroll", "Performing arts", 
         "Studio Light", "Person supervillain", "Person superhero", "Musical score", "Star", "Admission tickets", "Trophy", "Hand with fingers splayed", "Sunglasses", 
         "Lipstick", "Artist palette", "Crown", "Gem stone", "Fire", "Person wearing turban", "Elephant", "Tiger", "Peacock", "Lotus"
@@ -35,7 +35,43 @@ MODE_KEYWORDS = {
         "Cat", "Dog", "Red apple", "Sun with face", "Full moon", "Glowing star", "Soccer ball", "Automobile", "Evergreen tree", "House", 
         "Hibiscus", "Bird", "Teddy bear", "Baby chick", "Balloon", "Birthday cake", "Ice cream", "Butterfly", "Tropical fish", "Rainbow", 
         "Elephant", "Lion", "Rabbit", "Bear", "Duck", "Monkey", "Giraffe", "Zebra", "Turtle"
+    ],
+    "bollywood_real": [
+        "Shah Rukh Khan", "Salman Khan", "Deepika Padukone", "Amitabh Bachchan", "Aamir Khan", "Gabbar Singh", "Sholay", "3 Idiots", 
+        "Alia Bhatt", "Priyanka Chopra", "Rajinikanth", "Kareena Kapoor", "Hrithik Roshan", "Akshay Kumar", "Katrina Kaif", 
+        "Ranveer Singh", "Ranbir Kapoor", "Anushka Sharma", "Varun Dhawan", "Madhuri Dixit", "Sridevi", "Kajol", "Rishi Kapoor", 
+        "Dev Anand", "Lagaan", "Dangal", "Bahubali"
     ]
+}
+
+RELIABLE_IMAGE_MAP = {
+    "Shah Rukh Khan": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/Shahrukh_Khan_CE.jpg/400px-Shahrukh_Khan_CE.jpg",
+    "Salman Khan": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Salman_Khan_at_Renault_Star_Guild_Awards.jpg/400px-Salman_Khan_at_Renault_Star_Guild_Awards.jpg",
+    "Deepika Padukone": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Deepika_Padukone_at_Grazia_Millennial_Awards_2022_%281%29.jpg/400px-Deepika_Padukone_at_Grazia_Millennial_Awards_2022_%281%29.jpg",
+    "Amitabh Bachchan": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Amitabh_Bachchan_2011.jpg/400px-Amitabh_Bachchan_2011.jpg",
+    "Aamir Khan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Aamir_Khan_March_2015.jpg/400px-Aamir_Khan_March_2015.jpg",
+    "Gabbar Singh": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/ba/Amjad_Khan_%28actor%29.jpg/400px-Amjad_Khan_%28actor%29.jpg",
+    "Sholay": "https://upload.wikimedia.org/wikipedia/en/thumb/5/52/Sholay-poster.jpg/400px-Sholay-poster.jpg",
+    "3 Idiots": "https://upload.wikimedia.org/wikipedia/en/thumb/d/df/3_idiots_poster.jpg/400px-3_idiots_poster.jpg",
+    "Alia Bhatt": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Alia_Bhatt_Red_Carpets.jpg/400px-Alia_Bhatt_Red_Carpets.jpg",
+    "Priyanka Chopra": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Priyanka-chopra-vogue-june-2023-new_copy_2.jpg/400px-Priyanka-chopra-vogue-june-2023-new_copy_2.jpg",
+    "Rajinikanth": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/14/Rajinikanth_2.jpg/400px-Rajinikanth_2.jpg",
+    "Kareena Kapoor": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Kareena_Kapoor_Khan_Grazia.jpg/400px-Kareena_Kapoor_Khan_Grazia.jpg",
+    "Hrithik Roshan": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/Hrithik_Roshan_2012.jpg/400px-Hrithik_Roshan_2012.jpg",
+    "Akshay Kumar": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Akshay_Kumar_promoting_Singh_Is_Bliing.jpg/400px-Akshay_Kumar_promoting_Singh_Is_Bliing.jpg",
+    "Katrina Kaif": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Katrina_Kaif_2023.jpg/400px-Katrina_Kaif_2023.jpg",
+    "Ranveer Singh": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ranveer_Singh_2017.jpg/400px-Ranveer_Singh_2017.jpg",
+    "Ranbir Kapoor": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Ranbir_Kapoor_at_World_of_Anant_Ambani.jpg/400px-Ranbir_Kapoor_at_World_of_Anant_Ambani.jpg",
+    "Anushka Sharma": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Anushka_Sharma_at_Femina_Women_Awards_2015_%28cropped%29.jpg/400px-Anushka_Sharma_at_Femina_Women_Awards_2015_%28cropped%29.jpg",
+    "Varun Dhawan": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Varun_Dhawan_promoting_Bhediya.jpg/400px-Varun_Dhawan_promoting_Bhediya.jpg",
+    "Madhuri Dixit": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Madhuri_Dixit_promoting_Maja_Ma.jpg/400px-Madhuri_Dixit_promoting_Maja_Ma.jpg",
+    "Sridevi": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f6/Sridevi_2012.jpg/400px-Sridevi_2012.jpg",
+    "Kajol": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Kajol_at_Kala_Ghoda_Festival_%281%29.jpg/400px-Kajol_at_Kala_Ghoda_Festival_%281%29.jpg",
+    "Rishi Kapoor": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Rishi_Kapoor_Filmfare.jpg/400px-Rishi_Kapoor_Filmfare.jpg",
+    "Dev Anand": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Dev_Anand_at_the_starlite_event.jpg/400px-Dev_Anand_at_the_starlite_event.jpg",
+    "Lagaan": "https://upload.wikimedia.org/wikipedia/en/thumb/b/b6/Lagaan.jpg/400px-Lagaan.jpg",
+    "Dangal": "https://upload.wikimedia.org/wikipedia/en/thumb/9/99/Dangal_Poster.jpg/400px-Dangal_Poster.jpg",
+    "Bahubali": "https://upload.wikimedia.org/wikipedia/en/thumb/c/c8/Baahubali_The_Beginning_Poster.jpg/400px-Baahubali_The_Beginning_Poster.jpg"
 }
 
 def get_emoji_url(keyword: str) -> str:
@@ -173,7 +209,7 @@ class CoupleClashRoomState:
         
         self.board = []
         for i, (k, t) in enumerate(zip(selected_keywords, types)):
-            img_url = get_emoji_url(k)
+            img_url = RELIABLE_IMAGE_MAP.get(k, get_emoji_url(k))
             self.board.append(Tile(i, img_url, t, k))
             
         self.status = TurnPhase.WAITING_FOR_CLUE
@@ -202,7 +238,7 @@ class CoupleClashRoomState:
         if available:
             new_keyword = random.choice(available)
             tile.keyword = new_keyword
-            tile.image = get_emoji_url(new_keyword)
+            tile.image = RELIABLE_IMAGE_MAP.get(new_keyword, get_emoji_url(new_keyword))
             self.save()
 
     def submit_clue(self, word: str, number: int):

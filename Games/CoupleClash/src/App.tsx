@@ -374,7 +374,7 @@ function App() {
           </div>
           <div style={{ flex: 1, minWidth: '300px' }}>
             <h2>Pink Team (Women)</h2>
-            <button className="btn btn-secondary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('pink')}>Join Sassy Pink</button>
+            <button className="btn btn-secondary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('pink')}>Join Pink</button>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'pink').map(([id, p]) => (
                 <li key={id} style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -397,14 +397,14 @@ function App() {
           <div className="glass-panel" style={{ marginTop: '2rem', textAlign: 'center' }}>
             <h2>Host Settings</h2>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
-              {(['classic', 'couples', 'bollywood', 'kids'] as const).map(m => (
+              {(['classic', 'couples', 'movies', 'bollywood_real', 'kids'] as const).map(m => (
                 <button
                   key={m}
                   className={`btn ${gameState?.game_mode === m ? 'btn-primary' : 'btn-secondary'}`}
                   style={{ padding: '0.5rem 1rem' }}
                   onClick={() => handleSetMode(m)}
                 >
-                  {m.toUpperCase()}
+                  {m.replace('_', ' ').toUpperCase()}
                 </button>
               ))}
             </div>
@@ -415,7 +415,7 @@ function App() {
                 style={{ padding: '0.5rem 1rem' }}
                 onClick={() => handleSetStartingTeam(gameState?.starting_team_pref === 'blue' ? 'pink' : 'blue')}
               >
-                {gameState?.starting_team_pref === 'blue' ? 'MEN (Blue)' : 'WOMEN (Sassy Pink)'}
+                {gameState?.starting_team_pref === 'blue' ? 'MEN (Blue)' : 'WOMEN (Pink)'}
               </button>
             </div>
           </div>
@@ -433,14 +433,14 @@ function App() {
   if (view === 'game_over') {
     const winnerName = gameState?.winner === 'blue' ? 'Blue Team' : 'Pink Team';
     const winnerColor = gameState?.winner === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)';
-    
+
     return (
       <div className="app-container">
         <div className="animate-float">
           <h1 className="title-giant" style={{ color: winnerColor }}>{winnerName} Wins!</h1>
           <p className="subtitle">Congratulations to the victors!</p>
         </div>
-        
+
         <div className="glass-panel" style={{ maxWidth: '600px', textAlign: 'center' }}>
           <div style={{ display: 'flex', justifyContent: 'center', gap: '4rem', marginBottom: '2rem' }}>
             <div>
@@ -452,7 +452,7 @@ function App() {
               <div style={{ fontSize: '3rem', fontWeight: 900 }}>{gameState?.scores.pink}</div>
             </div>
           </div>
-          
+
           {isHostUser && (
             <button className="btn btn-primary" style={{ padding: '1.5rem 4rem' }} onClick={handleResetGame}>
               Play Again
@@ -473,12 +473,12 @@ function App() {
   return (
     <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
       {/* Game HUD Header */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: '1fr auto 1fr', 
-        alignItems: 'center', 
-        width: '100%', 
-        maxWidth: '1200px', 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto 1fr',
+        alignItems: 'center',
+        width: '100%',
+        maxWidth: '1200px',
         marginBottom: '1rem',
         padding: '0 1rem'
       }}>
@@ -498,9 +498,9 @@ function App() {
         </div>
 
         {/* Column 2: Turn Indicator (Center) */}
-        <div style={{ 
-          color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)', 
-          fontWeight: 900, 
+        <div style={{
+          color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)',
+          fontWeight: 900,
           fontSize: '1.5rem',
           textAlign: 'center',
           textShadow: '0 0 20px rgba(0,0,0,0.5)'
