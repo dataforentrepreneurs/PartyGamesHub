@@ -8,21 +8,14 @@ import asyncio
 import os
 import random
 import time
-import posthog
+from services.analytics import track_event
 import sentry_sdk
-from posthog import Posthog
 
 # Attempt to load frontend .env for the API key if missing locally
 frontend_env_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"))
 if os.path.exists(frontend_env_path):
     from dotenv import load_dotenv
     load_dotenv(frontend_env_path)
-
-POSTHOG_KEY = os.environ.get("POSTHOG_API_KEY") or os.environ.get("VITE_POSTHOG_KEY")
-POSTHOG_HOST = os.environ.get("POSTHOG_HOST") or os.environ.get("VITE_POSTHOG_HOST") or "https://us.i.posthog.com"
-ph_client = None
-if POSTHOG_KEY:
-    ph_client = Posthog(POSTHOG_KEY, host=POSTHOG_HOST)
 
 FALLBACK_PROMPTS = {
     "Family": ["A dog flying a kite", "A friendly monster baking cookies", "A penguin on vacation"],
@@ -60,23 +53,6 @@ async def process_judging(room_code: str, room):
             "message": ai_status_msg
         })
         
-        # Track AI Latency Backend-Side exactly once
-        if ph_client:
-            try:
-                ph_client.capture(
-                    "AI_Judge_Latency",
-                    distinct_id=room.host_id, # using host ID as distinct persona for the room
-                    properties={
-                        "latency_seconds": float(eval_result.ai_latency_seconds),
-                        "player_count": len(room.submissions),
-                        "is_mock": any_mock,
-                        "theme": room.theme
-                    }
-                )
-                ph_client.flush() # Force instantaneous delivery of latency metric
-            except Exception as e:
-                print("Posthog capture failed:", e)
-
         # Inform room to transition out of judging state to allow next rounds
         room.status = "results"
                 
@@ -109,6 +85,17 @@ async def process_judging(room_code: str, room):
         room.last_winner_explanation = winner_exp
         room.save()
 
+        if room.current_round >= room.max_rounds:
+            track_event(
+                event_name="game_ended",
+                lobby_id=room_code,
+                platform="backend",
+                user_role="system",
+                device_id="backend",
+                player_count=len(room.players),
+                properties={"total_rounds": room.current_round, "mode": room.game_mode}
+            )
+
         # Broadcast results
         await manager.broadcast_to_room(room_code, {
             "event": "results_ready",
@@ -138,7 +125,8 @@ async def websocket_endpoint(
     websocket: WebSocket, 
     room_code: str, 
     player_id: str = Query(...), 
-    name: str = Query(...)
+    name: str = Query(...),
+    platform: str = Query("web")
 ):
     room_code = room_code.upper()
     
@@ -149,15 +137,37 @@ async def websocket_endpoint(
     room = get_room_state(room_code)
     
     if not room:
+        track_event(
+            event_name="lobby_join_failed",
+            lobby_id=room_code,
+            platform=platform,
+            user_role="unknown",
+            device_id=player_id,
+            player_count=0,
+            properties={"reason": "room_not_found"}
+        )
         await websocket.close(code=4004, reason="Room not found")
         return
 
     # Add player if not exists
+    is_new = False
     if player_id not in room.players and player_id != room.host_id:
         room.players[player_id] = {"name": name, "score": 0}
+        is_new = True
         if room.status == "drawing":
             room.round_participants.append(player_id)
             room.save()
+
+    # Track only successful join / re-join mapping
+    track_event(
+        event_name="lobby_joined",
+        lobby_id=room_code,
+        platform=platform,
+        user_role="host" if player_id == room.host_id else "player",
+        device_id=player_id,
+        player_count=len(room.players),
+        properties={"is_new": is_new}
+    )
 
     room.player_presence[player_id] = {"connected": True, "last_seen": time.time()}
 

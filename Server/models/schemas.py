@@ -1,6 +1,10 @@
 from pydantic import BaseModel # pyre-ignore
 from typing import Optional, Dict, List
 
+class RoomCreateRequest(BaseModel):
+    device_id: Optional[str] = "unknown"
+    platform: Optional[str] = "web"
+
 class RoomCreateResponse(BaseModel):
     room_code: str
     host_id: str

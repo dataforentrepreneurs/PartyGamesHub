@@ -3,7 +3,7 @@ import { Play, Users, ArrowLeft, Loader2, Crown, Trophy, Share2 } from 'lucide-r
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
-import posthog from 'posthog-js';
+import { pushEvent, getPlatform } from './analytics';
 import DrawCanvas from './DrawCanvas';
 import mainLogo from './assets/gold.png';
 
@@ -144,7 +144,7 @@ function App() {
   const connectWebSocket = (code: string, isHost: boolean, overridePlayerId: string) => {
     setIsHostUser(isHost);
     const name = isHost ? "Host" : playerName;
-    const socket = new WebSocket(`${backendConfig.wsBase}/${code}?player_id=${overridePlayerId}&name=${encodeURIComponent(name)}`);
+    const socket = new WebSocket(`${backendConfig.wsBase}/${code}?player_id=${overridePlayerId}&name=${encodeURIComponent(name)}&platform=${getPlatform()}`);
     ws.current = socket;
 
     // Render/Heroku drop idle sockets after 60s. Heartbeat prevents this perfectly:
@@ -267,7 +267,6 @@ function App() {
         if (data.max_rounds !== undefined) setMaxRounds(data.max_rounds);
         setSubmissionCount(0);
         setView('drawing');
-        posthog.capture('Round_Started', { mode: data.mode, duration: data.duration_seconds });
       } else if (data.event === 'judging_started') {
         setView('judging');
       } else if (data.event === 'results_ready') {
@@ -290,6 +289,7 @@ function App() {
             setSelectedPlayerName(sortedLeaderboard[0].name);
             socket.send(JSON.stringify({ event: 'get_player_history', player_id: sortedLeaderboard[0].id }));
           }
+          pushEvent('game_ended', roomCode, isHostUser ? 'host' : 'player', playerId, { player_count: Object.keys(data.leaderboard || {}).length, total_rounds: data.current_round });
         }
 
         setView('results');
@@ -390,7 +390,11 @@ function App() {
     const url = `${backendConfig.apiBase}/rooms`;
     console.log("Attempting to create room at:", url);
     try {
-      const res = await fetch(url, { method: 'POST' });
+      const res = await fetch(url, { 
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ device_id: playerId, platform: getPlatform() })
+      });
       if (!res.ok) {
         const errText = await res.text();
         throw new Error(`HTTP ${res.status}: ${errText}`);
@@ -404,7 +408,7 @@ function App() {
       localStorage.setItem('dj_player_id', data.host_id);
       connectWebSocket(data.room_code, true, data.host_id);
       setView('hostLobby');
-      posthog.capture('Game_Created', { room_code: data.room_code });
+      pushEvent('lobby_created', data.room_code, 'host', data.host_id, { player_count: 1 });
     } catch (e: any) {
       alert(`Failed creating room! URL: ${url}. Error: ${e.message || e}`);
     }
@@ -415,7 +419,7 @@ function App() {
     localStorage.setItem('dj_player_name', playerName);
     localStorage.setItem('dj_player_id', playerId);
     connectWebSocket(roomCode, false, playerId);
-    posthog.capture('Player_Joined', { room_code: roomCode });
+    pushEvent('lobby_joined', roomCode, 'player', playerId);
     // Wait for the new resume_state payload to deliberately route the view instead of hardcoding 'playerLobby'
   };
 
@@ -431,7 +435,6 @@ function App() {
       setHasSubmittedThisRound(true);
       setHasSubmittedImage(dataUrl);
       setView('playerLobby');
-      posthog.capture('Drawing_Submitted', { mode: gameMode });
     }
   };
 
@@ -482,7 +485,6 @@ function App() {
         link.click();
         document.body.removeChild(link);
       }
-      posthog.capture('Shared_To_Story');
     } catch (err: any) {
       console.error("Failed to share", err);
       alert("Could not create image: " + (err.message || err.toString()));
