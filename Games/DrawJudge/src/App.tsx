@@ -44,7 +44,7 @@ const playTadaSound = () => {
 const getDynamicHost = () => {
   const envUrl = import.meta.env.VITE_BACKEND_URL;
   if (envUrl) return envUrl;
-  
+
   const currentHost = window.location.host;
 
   // If we are running on a standard web host (like Render), use that
@@ -62,7 +62,7 @@ const getDynamicHost = () => {
   if (currentHost && (currentHost.includes('localhost:5173') || currentHost.includes('127.0.0.1:5173'))) {
     return 'localhost:8000';
   }
-  
+
   // Default to your Render backend for production TV/mobile connectivity
   return 'party-games-hub-0qly.onrender.com';
 };
@@ -159,10 +159,19 @@ function App() {
       fetch(`${backendConfig.apiBase}/rooms/fake-keep-alive`).catch(() => { });
     }, 5 * 60 * 1000); // 5 minutes
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       clearInterval(pingInterval);
       clearInterval(keepAliveInterval);
       setIsConnected(false);
+
+      if (event && event.code === 4004) {
+        console.warn("DEBUG: Room not found on server. Reverting to join page.");
+        alert("Invalid Room Code! Please try again.");
+        setRoomCode('');
+        setView('join');
+        return;
+      }
+
       // Auto-reconnect after 3 seconds if not in a landing state
       setTimeout(() => {
         if (viewRef.current !== 'landing' && viewRef.current !== 'join') {
@@ -362,8 +371,8 @@ function App() {
   useEffect(() => {
     if (!isHostUser && view === 'leaderboard' && currentRound >= maxRounds && players.length > 0 && playerId) {
       if (!selectedPlayerHistory) {
-         setSelectedPlayerName(players.find(p => p.id === playerId)?.name || 'Me');
-         if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: playerId }));
+        setSelectedPlayerName(players.find(p => p.id === playerId)?.name || 'Me');
+        if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: playerId }));
       }
     }
   }, [isHostUser, view, currentRound, maxRounds, players, selectedPlayerHistory, playerId]);
@@ -390,7 +399,7 @@ function App() {
     const url = `${backendConfig.apiBase}/rooms`;
     console.log("Attempting to create room at:", url);
     try {
-      const res = await fetch(url, { 
+      const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ device_id: playerId, platform: getPlatform() })
@@ -564,15 +573,15 @@ function App() {
               <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', marginBottom: '4px', textAlign: 'left' }}>TOTAL ROUNDS</label>
               <div style={{ display: 'flex', gap: '8px' }}>
                 {[3, 5, 10, 15].map(r => (
-                  <button 
-                     key={r} 
-                     className={maxRounds === r ? 'btn-primary' : 'btn-secondary'} 
-                     style={{ flex: 1, padding: '12px', fontSize: '1.2rem', margin: 0 }}
-                     onClick={() => {
-                        if (ws.current) ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: r }));
-                     }}
+                  <button
+                    key={r}
+                    className={maxRounds === r ? 'btn-primary' : 'btn-secondary'}
+                    style={{ flex: 1, padding: '12px', fontSize: '1.2rem', margin: 0 }}
+                    onClick={() => {
+                      if (ws.current) ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: r }));
+                    }}
                   >
-                     {r}
+                    {r}
                   </button>
                 ))}
               </div>
@@ -1004,33 +1013,33 @@ function App() {
       {/* History Modal Overlay for manually clicking players or the Grand Recap */}
       {selectedPlayerHistory && (currentRound < maxRounds || !isHostUser) && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', alignItems: 'center' }}>
-          
+
           <div className="w-full max-w-5xl flex-row justify-between mb-4 flex-wrap" style={{ gap: '16px' }}>
             {!isHostUser && currentRound >= maxRounds ? (
-               <button 
-                 className="btn-primary" 
-                 style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.2rem', flex: 1, animation: isSharing ? 'none' : 'pulse-glow 2s infinite' }}
-                 disabled={isSharing}
-                 onClick={() => handleShare('my-grand-recap', `${selectedPlayerName}_Recap`)}
-               >
-                 {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />} 
-                 {isSharing ? 'Generating Epic Recap...' : 'Share Full Game Recap! 📸'}
-               </button>
-            ) : <div style={{flex: 1}} />}
+              <button
+                className="btn-primary"
+                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.2rem', flex: 1, animation: isSharing ? 'none' : 'pulse-glow 2s infinite' }}
+                disabled={isSharing}
+                onClick={() => handleShare('my-grand-recap', `${selectedPlayerName}_Recap`)}
+              >
+                {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
+                {isSharing ? 'Generating Epic Recap...' : 'Share Full Game Recap! 📸'}
+              </button>
+            ) : <div style={{ flex: 1 }} />}
             <button className="btn-secondary" onClick={() => setSelectedPlayerHistory(null)} style={{ padding: '16px 32px', fontSize: '1.2rem' }}>✕ Close</button>
           </div>
 
           <div id={(!isHostUser && currentRound >= maxRounds) ? "my-grand-recap" : undefined} className="animate-pop-in w-full max-w-5xl" style={{ background: (!isHostUser && currentRound >= maxRounds) ? '#0a0d17' : 'transparent', padding: (!isHostUser && currentRound >= maxRounds) ? '32px' : '0', borderRadius: '24px', border: (!isHostUser && currentRound >= maxRounds) ? '4px solid var(--primary)' : 'none' }}>
-            
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
               <div className="flex-col" style={{ alignItems: 'flex-start' }}>
                 <h2 className="title-giant text-primary" style={{ fontSize: '3rem', margin: 0, lineHeight: 1.1 }}>
-                   {(!isHostUser && currentRound >= maxRounds) ? "My Draw Judge Journey" : `${selectedPlayerName}'s History`}
+                  {(!isHostUser && currentRound >= maxRounds) ? "My Draw Judge Journey" : `${selectedPlayerName}'s History`}
                 </h2>
                 {(!isHostUser && currentRound >= maxRounds) && (
-                   <div style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', marginTop: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '8px' }}>
-                      Player: <span style={{color: 'white'}}>{selectedPlayerName}</span> • Total Score: <span className="text-primary">{players.find(p => p.name === selectedPlayerName)?.score || 0} pts</span>
-                   </div>
+                  <div style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', marginTop: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '8px' }}>
+                    Player: <span style={{ color: 'white' }}>{selectedPlayerName}</span> • Total Score: <span className="text-primary">{players.find(p => p.name === selectedPlayerName)?.score || 0} pts</span>
+                  </div>
                 )}
               </div>
             </div>
@@ -1057,9 +1066,9 @@ function App() {
             </div>
 
             {(!isHostUser && currentRound >= maxRounds) && (
-                <div style={{ marginTop: '32px', textAlign: 'center', color: 'hsla(0,0%,100%,0.4)', fontSize: '1rem', fontWeight: 900, letterSpacing: '4px', textTransform: 'uppercase' }}>
-                    DRAW JUDGE 🤖🎨
-                </div>
+              <div style={{ marginTop: '32px', textAlign: 'center', color: 'hsla(0,0%,100%,0.4)', fontSize: '1rem', fontWeight: 900, letterSpacing: '4px', textTransform: 'uppercase' }}>
+                DRAW JUDGE 🤖🎨
+              </div>
             )}
           </div>
         </div>

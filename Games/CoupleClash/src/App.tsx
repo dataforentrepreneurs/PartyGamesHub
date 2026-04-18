@@ -157,6 +157,7 @@ function App() {
       // If room not found (4004), don't retry. Kick back to landing.
       if (event.code === 4004) {
         console.warn("DEBUG: Room not found on server. Reverting to landing page.");
+        alert("Invalid Room Code! Please try again.");
         setRoomCode('');
         setGameState(null);
         setView('landing');
@@ -334,6 +335,13 @@ function App() {
             <button className="btn btn-secondary" onClick={handleJoinRoom}>Join</button>
           </div>
         </div>
+        
+        <a 
+          href="mailto:feedback@partygameshub.com" 
+          style={{ marginTop: '24px', opacity: 0.6, fontSize: '0.9rem', color: 'white', textDecoration: 'underline' }}
+        >
+          Report Issue or Send Feedback
+        </a>
       </div>
     );
   }
