@@ -119,6 +119,27 @@ function App() {
   const [hasSubmittedThisRound, setHasSubmittedThisRound] = useState(false);
   const [hasSubmittedImage, setHasSubmittedImage] = useState<string | null>(null);
   const [isInviteLink, setIsInviteLink] = useState(false);
+  const [, setDevTapCount] = useState(0);
+  const [isDebugMode, setIsDebugMode] = useState(false);
+  const tapTimeoutRef = useRef<any>(null);
+
+  const handleLogoTap = () => {
+    if (isDebugMode) return;
+    setDevTapCount(prev => {
+      const next = prev + 1;
+      if (next >= 7) {
+        setIsDebugMode(true);
+        alert("Developer Options Enabled!");
+        return 0;
+      }
+      return next;
+    });
+    
+    if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
+    tapTimeoutRef.current = setTimeout(() => {
+      setDevTapCount(0);
+    }, 1000);
+  };
 
   const ws = useRef<WebSocket | null>(null);
 
@@ -530,18 +551,20 @@ function App() {
       {view === 'landing' && (
         <div className="flex-col animate-float">
           <div className="text-center mb-8 ">
-            <img src={mainLogo} alt="Draw Judge Logo" style={{ width: '100%', maxWidth: '350px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 20px hsla(45, 100%, 50%, 0.3))' }} />
+            <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '350px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 20px hsla(45, 100%, 50%, 0.3))' }} />
             <p className="subtitle mt-4">Draw. Submit. Let AI decide.</p>
           </div>
           <div className="glass-panel flex-col">
             <button className="btn-primary" onClick={handleCreateRoom} style={{ animation: 'pulse-glow 2s infinite' }}><Play size={24} /> Create Game</button>
             <button className="btn-secondary" onClick={() => setView('join')}><Users size={24} /> Join Room</button>
-            <button
-              onClick={testConnection}
-              style={{ marginTop: '20px', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
-            >
-              {isTesting ? 'Testing...' : 'Debug: Test Connection to PC'}
-            </button>
+            {isDebugMode && (
+              <button
+                onClick={testConnection}
+                style={{ marginTop: '20px', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
+              >
+                {isTesting ? 'Testing...' : 'Debug: Test Connection to PC'}
+              </button>
+            )}
           </div>
         </div>
       )}
