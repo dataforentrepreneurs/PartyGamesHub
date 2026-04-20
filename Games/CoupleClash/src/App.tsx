@@ -105,6 +105,17 @@ function App() {
   const [isInviteLink, setIsInviteLink] = useState(false);
 
   const ws = useRef<WebSocket | null>(null);
+
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const tutorialData = [
+    { img: '/cc_tutorial_1.png', title: 'Join a Team', text: 'Players divide into Blue and Pink teams. The Host selects 1 active Captain per team.' },
+    { img: '/cc_tutorial_2.png', title: 'The Clue', text: 'The active Captain gives a ONE-WORD clue and a number (e.g., "Ocean, 2") that relates to some of the images on the board.' },
+    { img: '/cc_tutorial_3.png', title: 'Voting', text: 'The rest of the team must discuss and vote on which images match the clue. Guess correctly to keep your turn!' },
+    { img: '/cc_tutorial_4.png', title: 'The Assassin', text: 'Be extremely careful! If your team votes for the Assassin (Bomb) tile, you instantly lose the game!' }
+  ];
+
   const viewRef = useRef(view);
 
   useEffect(() => {
@@ -338,8 +349,32 @@ function App() {
             />
             <button className="btn btn-secondary" onClick={handleJoinRoom}>Join</button>
           </div>
+          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '8px' }}>
+            ❓ How to Play
+          </button>
         </div>
         
+        {showTutorial && (
+          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+            <div className="glass-panel" style={{ maxWidth: '400px', width: '90%', padding: '24px', position: 'relative', textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
+              <button onClick={() => setShowTutorial(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: 'white', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+              <h2 className="title" style={{ fontSize: '1.8rem', marginBottom: '16px', color: 'var(--blue-team)' }}>How to Play</h2>
+              <img src={tutorialData[tutorialStep].img} alt="Tutorial Step" style={{ width: '100%', height: 'auto', borderRadius: '12px', marginBottom: '16px', border: '2px solid rgba(255,255,255,0.1)' }} />
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '8px' }}>{tutorialData[tutorialStep].title}</h3>
+              <p style={{ fontSize: '1rem', opacity: 0.8, marginBottom: '24px', minHeight: '60px' }}>{tutorialData[tutorialStep].text}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <button className="btn btn-secondary" disabled={tutorialStep === 0} onClick={() => setTutorialStep(prev => prev - 1)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto', opacity: tutorialStep === 0 ? 0.3 : 1 }}>Back</button>
+                <span style={{ opacity: 0.5, fontWeight: 'bold' }}>{tutorialStep + 1} / {tutorialData.length}</span>
+                {tutorialStep < tutorialData.length - 1 ? (
+                  <button className="btn btn-primary" onClick={() => setTutorialStep(prev => prev + 1)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}>Next</button>
+                ) : (
+                  <button className="btn btn-primary" onClick={() => setShowTutorial(false)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}>Got it!</button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <a 
           href="mailto:feedback@partygameshub.com" 
           style={{ marginTop: '24px', opacity: 0.6, fontSize: '0.9rem', color: 'white', textDecoration: 'underline' }}

@@ -143,6 +143,15 @@ function App() {
 
   const ws = useRef<WebSocket | null>(null);
 
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
+
+  const tutorialData = [
+    { img: '/dj_tutorial_1.png', title: 'Join the Lobby', text: 'The Host creates a room on a TV or laptop. Everyone else scans the QR code on their phone to join.' },
+    { img: '/dj_tutorial_2.png', title: 'Start Drawing', text: 'You will receive a prompt. Use your finger to draw your best illustration before the time runs out!' },
+    { img: '/dj_tutorial_3.png', title: 'AI Judging', text: 'Watch the TV! An AI judge will evaluate everyone\'s drawings and award scores based on accuracy and creativity.' }
+  ];
+
   const viewRef = useRef(view);
   const hasSubmittedRef = useRef(hasSubmittedThisRound);
 
@@ -528,6 +537,27 @@ function App() {
   return (
     <div className={isHostUser ? "w-full max-w-6xl px-4 flex-col" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
 
+      {showTutorial && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
+          <div className="glass-panel flex-col" style={{ maxWidth: '400px', width: '90%', padding: '24px', position: 'relative', textAlign: 'center' }}>
+            <button onClick={() => setShowTutorial(false)} style={{ position: 'absolute', top: '12px', right: '12px', background: 'transparent', border: 'none', color: 'white', fontSize: '2rem', cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+            <h2 className="title" style={{ fontSize: '1.8rem', marginBottom: '16px', color: 'var(--primary)' }}>How to Play</h2>
+            <img src={tutorialData[tutorialStep].img} alt="Tutorial Step" style={{ width: '100%', height: 'auto', borderRadius: '12px', marginBottom: '16px', border: '2px solid rgba(255,255,255,0.1)' }} />
+            <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '8px' }}>{tutorialData[tutorialStep].title}</h3>
+            <p style={{ fontSize: '1rem', opacity: 0.8, marginBottom: '24px', minHeight: '60px' }}>{tutorialData[tutorialStep].text}</p>
+            <div className="flex-row" style={{ justifyItems: 'center', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <button className="btn-secondary" disabled={tutorialStep === 0} onClick={() => setTutorialStep(prev => prev - 1)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto', opacity: tutorialStep === 0 ? 0.3 : 1 }}>Back</button>
+              <span style={{ opacity: 0.5, fontWeight: 'bold' }}>{tutorialStep + 1} / {tutorialData.length}</span>
+              {tutorialStep < tutorialData.length - 1 ? (
+                <button className="btn-primary" onClick={() => setTutorialStep(prev => prev + 1)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}>Next</button>
+              ) : (
+                <button className="btn-primary" onClick={() => setShowTutorial(false)} style={{ padding: '8px 16px', fontSize: '0.9rem', width: 'auto' }}>Got it!</button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {!isConnected && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <Loader2 size={64} className="text-primary animate-spin mb-4" />
@@ -557,6 +587,9 @@ function App() {
           <div className="glass-panel flex-col">
             <button className="btn-primary" onClick={handleCreateRoom} style={{ animation: 'pulse-glow 2s infinite' }}><Play size={24} /> Create Game</button>
             <button className="btn-secondary" onClick={() => setView('join')}><Users size={24} /> Join Room</button>
+            <button className="btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', marginTop: '8px' }}>
+              ❓ How to Play
+            </button>
             {isDebugMode && (
               <button
                 onClick={testConnection}
@@ -571,7 +604,14 @@ function App() {
 
       {view === 'join' && (
         <div className="glass-panel flex-col">
-          {!isInviteLink && <button className="btn-secondary" style={{ width: 'auto', alignSelf: 'flex-start', padding: '8px 12px', marginBottom: '16px' }} onClick={() => setView('landing')}><ArrowLeft size={20} /> Back</button>}
+          <div className="flex-row" style={{ width: '100%', justifyContent: 'space-between', marginBottom: '16px' }}>
+            {!isInviteLink ? (
+              <button className="btn-secondary" style={{ width: 'auto', padding: '8px 12px' }} onClick={() => setView('landing')}><ArrowLeft size={20} /> Back</button>
+            ) : <div />}
+            <button onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', fontWeight: 'bold' }}>
+              ❓ How to Play
+            </button>
+          </div>
           <h2 className="title-giant" style={{ fontSize: '3rem' }}>JOIN</h2>
           <input type="text" className="input-field mb-4" placeholder="ROOM CODE" maxLength={6} value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase())} />
           <input type="text" className="input-field mb-8" placeholder="YOUR NAME" maxLength={12} value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
