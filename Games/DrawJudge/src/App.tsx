@@ -134,7 +134,7 @@ function App() {
       }
       return next;
     });
-    
+
     if (tapTimeoutRef.current) clearTimeout(tapTimeoutRef.current);
     tapTimeoutRef.current = setTimeout(() => {
       setDevTapCount(0);
@@ -146,10 +146,15 @@ function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
 
+  const basePath = import.meta.env.BASE_URL;
   const tutorialData = [
-    { img: '/dj_tutorial_1.png', title: 'Join the Lobby', text: 'The Host creates a room on a TV or laptop. Everyone else scans the QR code on their phone to join.' },
-    { img: '/dj_tutorial_2.png', title: 'Start Drawing', text: 'You will receive a prompt. Use your finger to draw your best illustration before the time runs out!' },
-    { img: '/dj_tutorial_3.png', title: 'AI Judging', text: 'Watch the TV! An AI judge will evaluate everyone\'s drawings and award scores based on accuracy and creativity.' }
+    { img: `${basePath}host1_create_room.png`, title: 'Create a Game', text: 'One person acts as the Host. Click "Create Game" on a TV, Projector, or Laptop to start.' },
+    { img: `${basePath}host2_lobby.png`, title: 'Join & Setup', text: 'Players scan the QR code to join. The Host customizes the game settings.' },
+    { img: `${basePath}host3_round.png`, title: 'The Prompt', text: 'Watch the main screen for the current round prompt and time limit.' },
+    { img: `${basePath}player1_round.png`, title: 'Start Drawing!', text: 'Look at your phone to draw your best illustration before the timer ends.' },
+    { img: `${basePath}host4_results.png`, title: 'The AI Judge', text: 'Watch the main screen! The AI evaluates each drawing and awards points.' },
+    { img: `${basePath}player2_results.png`, title: 'Personal Results', text: 'Check your phone to see how well you scored on this round.' },
+    { img: `${basePath}host5_leaderboard.png`, title: 'Round Results', text: 'Scores are tallied up! Keep playing until the final round to see who becomes the ultimate Draw Judge champion!' }
   ];
 
   const viewRef = useRef(view);

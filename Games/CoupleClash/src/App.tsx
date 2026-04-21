@@ -109,11 +109,15 @@ function App() {
   const [showTutorial, setShowTutorial] = useState(false);
   const [tutorialStep, setTutorialStep] = useState(0);
 
+  const basePath = import.meta.env.BASE_URL;
   const tutorialData = [
-    { img: '/cc_tutorial_1.png', title: 'Join a Team', text: 'Players divide into Blue and Pink teams. The Host selects 1 active Captain per team.' },
-    { img: '/cc_tutorial_2.png', title: 'The Clue', text: 'The active Captain gives a ONE-WORD clue and a number (e.g., "Ocean, 2") that relates to some of the images on the board.' },
-    { img: '/cc_tutorial_3.png', title: 'Voting', text: 'The rest of the team must discuss and vote on which images match the clue. Guess correctly to keep your turn!' },
-    { img: '/cc_tutorial_4.png', title: 'The Assassin', text: 'Be extremely careful! If your team votes for the Assassin (Bomb) tile, you instantly lose the game!' }
+    { img: `${basePath}host1_createroom.png`, title: 'Create a Game', text: 'One person acts as the Host. Click "Create Room" on a TV, Projector or Laptop to start.' },
+    { img: `${basePath}Player1_joinroom.png`, title: 'Join the Lobby', text: 'Players scan the QR code or enter the Room Code on their phones to join.' },
+    { img: `${basePath}host2_lobby.png`, title: 'Choose Teams', text: 'Players divide into Blue and Pink teams. The Host selects the game mode.' },
+    { img: `${basePath}host3_captain_gamemode.png`, title: 'Assign Captains', text: 'The Host assigns 1 active Captain per team to give clues for the round.' },
+    { img: `${basePath}Player2_captainclue.png`, title: 'The Captain\'s Clue', text: 'Captains receive their turn and give a ONE-WORD clue with the total number of images linked to that clue, to guide their team to correctly guess the tiles.' },
+    { img: `${basePath}host4_reveal.png`, title: 'Voting and Revealing', text: 'The team discusses and votes for the tiles. Guess right to keep going, but beware the Assassin!' },
+    { img: `${basePath}host5_chanceover.png`, title: 'Next Round', text: 'Keep tracking your points. When all tiles are guessed, the game decides the winning team!' }
   ];
 
   const viewRef = useRef(view);
@@ -353,7 +357,7 @@ function App() {
             ❓ How to Play
           </button>
         </div>
-        
+
         {showTutorial && (
           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
             <div className="glass-panel" style={{ maxWidth: '400px', width: '90%', padding: '24px', position: 'relative', textAlign: 'center', display: 'flex', flexDirection: 'column' }}>
@@ -375,8 +379,8 @@ function App() {
           </div>
         )}
 
-        <a 
-          href="mailto:feedback@partygameshub.com" 
+        <a
+          href="mailto:feedback@partygameshub.com"
           style={{ marginTop: '24px', opacity: 0.6, fontSize: '0.9rem', color: 'white', textDecoration: 'underline' }}
         >
           Report Issue or Send Feedback
