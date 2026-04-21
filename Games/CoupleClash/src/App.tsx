@@ -117,7 +117,7 @@ function App() {
     { img: `${basePath}host3_captain_gamemode.png`, title: 'Assign Captains', text: 'The Host assigns 1 active Captain per team to give clues for the round.' },
     { img: `${basePath}Player2_captainclue.png`, title: 'The Captain\'s Clue', text: 'Captains receive their turn and give a ONE-WORD clue with the total number of images linked to that clue, to guide their team to correctly guess the tiles.' },
     { img: `${basePath}host4_reveal.png`, title: 'Voting and Revealing', text: 'The team discusses and votes for the tiles. Guess right to keep going, but beware the Assassin!' },
-    { img: `${basePath}host5_chanceover.png`, title: 'Next Round', text: 'Keep tracking your points. When all tiles are guessed, the game decides the winning team!' }
+    { img: `${basePath}host5_chanceover.png`, title: 'Next Round', text: 'On the first wrong reveal the turn ends. First team to reveal all their tiles wins!' }
   ];
 
   const viewRef = useRef(view);
@@ -401,6 +401,15 @@ function App() {
             <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', display: 'inline-block', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
               <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={200} />
             </div>
+            
+            <div className="w-full text-left mt-4 p-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.1)' }}>
+              <h3 style={{ color: 'var(--blue-team)', marginBottom: '8px', fontWeight: 'bold' }}>How to Play</h3>
+              <ol style={{ textAlign: 'left', display: 'inline-block', margin: 0, paddingLeft: '1.5rem', opacity: 0.9, fontSize: '0.9rem', lineHeight: '1.6' }}>
+                <li><strong>Scan the QR code</strong> to join a team on your phone.</li>
+                <li>Wait for the Host to set modes and hit <strong>'Start Game'</strong>.</li>
+                <li>Follow the team Captain's clues to click the right pictures!</li>
+              </ol>
+            </div>
           </div>
         )}
         <div className="glass-panel" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
@@ -673,8 +682,10 @@ function App() {
       </div>
 
       {!isConnected && (
-        <div style={{ position: 'fixed', bottom: 20, right: 20, background: 'red', padding: '1rem', borderRadius: '12px' }}>
-          Disconnected. Reconnecting...
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <RefreshCw size={64} className="text-primary animate-spin" style={{ color: 'var(--blue-team)', marginBottom: '1rem' }} />
+          <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', margin: '0' }}>Reconnecting to Server</h2>
+          <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem', marginTop: '0.5rem' }}>Please wait...</p>
         </div>
       )}
     </div>

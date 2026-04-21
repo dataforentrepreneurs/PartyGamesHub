@@ -564,10 +564,10 @@ function App() {
       )}
 
       {!isConnected && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <Loader2 size={64} className="text-primary animate-spin mb-4" />
-          <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold' }}>Connection Lost</h2>
-          <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Reconnecting automatically...</p>
+          <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold' }}>Reconnecting to Server</h2>
+          <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Please wait...</p>
         </div>
       )}
 
@@ -631,6 +631,15 @@ function App() {
           <p className="subtitle" style={{ marginBottom: '0', color: 'hsla(0,0%,100%,0.8)' }}>Open <b>{backendConfig.host}/drawjudge</b> and enter this code to Join!</p>
           <div className="mb-4 mt-2 p-4" style={{ background: 'white', borderRadius: '16px' }}>
             <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={160} />
+          </div>
+          
+          <div className="w-full text-left p-4 mb-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.1)' }}>
+            <h3 style={{ color: 'var(--primary)', marginBottom: '8px', fontWeight: 'bold' }}>How to Play</h3>
+            <ol style={{ textAlign: 'left', display: 'inline-block', margin: 0, paddingLeft: '1.5rem', color: 'hsla(0,0%,100%,0.8)', fontSize: '0.9rem', lineHeight: '1.6' }}>
+              <li><strong>Scan the QR code</strong> to join on your phone.</li>
+              <li>Wait for the Host to hit <strong>'Start Round'</strong>.</li>
+              <li>Follow prompts and draw on your phone!</li>
+            </ol>
           </div>
 
           <div className="flex-row w-full mb-4" style={{ gap: '16px' }}>
