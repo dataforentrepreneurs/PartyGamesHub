@@ -53,9 +53,9 @@ const getDynamicHost = () => {
   }
 
   const isNative = (window as any).Capacitor?.isNativePlatform;
-  // If running on Android/TV (Native Capacitor), ALWAYS use Render
+  // If running on Android/TV (Native Capacitor), ALWAYS use production domain
   if (isNative) {
-    return 'party-games-hub-0qly.onrender.com';
+    return 'play.d4e.ai';
   }
 
   // Only use localhost if we are in a desktop browser for development (Vite usually uses 5173)
@@ -63,8 +63,8 @@ const getDynamicHost = () => {
     return 'localhost:8000';
   }
 
-  // Default to your Render backend for production TV/mobile connectivity
-  return 'party-games-hub-0qly.onrender.com';
+  // Default to your production domain for connectivity
+  return 'play.d4e.ai';
 };
 
 function generatePlayerId() {

@@ -54,9 +54,9 @@ const getDynamicHost = () => {
   }
 
   const isNative = (window as any).Capacitor?.isNativePlatform;
-  // If running on Android/TV (Native Capacitor), ALWAYS use Render
+  // If running on Android/TV (Native Capacitor), ALWAYS use production domain
   if (isNative) {
-    return 'party-games-hub-0qly.onrender.com';
+    return 'play.d4e.ai';
   }
 
   // Only use localhost if we are in a desktop browser for development (Vite usually uses 5173)
@@ -65,7 +65,7 @@ const getDynamicHost = () => {
   }
 
   // Fallback for everything else (Native, TV, or Production)
-  return 'party-games-hub-0qly.onrender.com';
+  return 'play.d4e.ai';
 };
 
 function generatePlayerId() {
