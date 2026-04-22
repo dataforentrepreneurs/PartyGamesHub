@@ -38,9 +38,12 @@ function App() {
 
   return (
     <div className="launcher-container">
-      <header>
-        <h1>PartyGames Hub</h1>
-        <p>Select a game to start playing on the TV</p>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
+        <img src="/logo.png" alt="Company Logo" style={{ height: '80px', width: 'auto' }} />
+        <div style={{ textAlign: 'left' }}>
+          <h1 style={{ margin: 0 }}>PartyGames Hub</h1>
+          <p style={{ margin: 0, opacity: 0.8 }}>Select a game to start playing on the TV</p>
+        </div>
       </header>
 
       <main className="cards-grid">

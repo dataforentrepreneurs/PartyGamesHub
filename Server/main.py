@@ -77,6 +77,13 @@ async def health_check():
     print("DEBUG: Health check hit")
     return {"status": "ok", "message": "Backend is reachable!"}
 
+@app.get("/privacy")
+async def serve_privacy():
+    privacy_path = os.path.join(os.path.dirname(__file__), "static", "privacy.html")
+    if os.path.exists(privacy_path):
+        return FileResponse(privacy_path)
+    raise HTTPException(status_code=404, detail="Privacy policy not found.")
+
 # Mount the compiled React Single Page Apps for production serving
 launcher_dist = os.getenv("LAUNCHER_DIST", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Games", "Launcher", "dist")))
 drawjudge_dist = os.getenv("DRAWJUDGE_DIST", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Games", "DrawJudge", "dist")))

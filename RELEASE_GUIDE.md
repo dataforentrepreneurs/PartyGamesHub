@@ -21,16 +21,43 @@ keytool -genkey -v -keystore partygameshub.jks -keyalg RSA -keysize 2048 -validi
 
 ---
 
+---
+
 ## 2. Android TV Compliance Checklist
 
 - [x] **Focus Highlight**: Already implemented via `:focus` scale and border effects in `App.css`.
 - [x] **Overscan Margins**: 5% padding added to `launcher-container`.
-- [ ] **Banner Image**: You MUST provide a 320x180 banner in `res/drawable` for the Android TV home screen.
+- [x] **Banner Image**: 320x180 banners generated and placed in `res/mipmap-*`.
 - [ ] **leanback:true**: Ensure `android:banner` and `android:isGame="true"` are set in `AndroidManifest.xml`.
 
 ---
 
-## 3. Singapore Business Verification
+## 3. Google Play Console Requirements
+
+Before submitting for review, ensure the following are configured in the Google Play Console:
+
+### Store Listing Assets
+- [ ] **Icon**: 512x512 PNG (Transparent).
+- [x] **Feature Graphic**: 1024x500 PNG.
+  - Path: `SharedAssets/feature_graphic_1024x500.png`
+- [ ] **Screenshots**: At least 2 screenshots of the app.
+- [ ] **TV Banner**: 320x180 PNG.
+  - Path: `Games/Launcher/android/app/src/main/res/mipmap-mdpi/ic_tv_banner.png`
+
+### App Compliance
+- [x] **Privacy Policy URL**: `https://play.d4e.ai/privacy`
+  - Served via: `Server/static/privacy.html`
+- [ ] **App Access**: If the app requires login (not currently), provide test credentials.
+- [ ] **Content Rating**: Complete the questionnaire (mostly "No" for party games).
+
+### Testing Tracks
+1. **Internal Testing**: Upload the `.aab` here first.
+   - File Location: `Games/Launcher/android/app/build/outputs/bundle/release/app-release.aab`
+2. **Production**: Move to production only AFTER Internal Testing is approved by Google.
+
+---
+
+## 4. Singapore Business Verification
 
 Since you are based in Singapore, Google Play requires:
 - **D-U-N-S Number**: If registering as an organization.
@@ -39,7 +66,7 @@ Since you are based in Singapore, Google Play requires:
 
 ---
 
-## 4. Deployment to Render
+## 5. Deployment to Render
 
 1. Go to [Render Dashboard](https://dashboard.render.com).
 2. Click **New** -> **Blueprint**.
@@ -55,7 +82,7 @@ Since you are based in Singapore, Google Play requires:
 
 ---
 
-## 5. Troubleshooting Production
+## 6. Troubleshooting Production
 - **404 on Icons**: Ensure `COUPLECLASH_DIST` is set and the build succeeded.
 - **WebSocket Disconnection**: Verify `REDIS_URL` is connected and active on Render.
 

@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-source_path = r"C:\Users\sahai\.gemini\antigravity\brain\62d5258d-7bbc-4e0f-908c-82da20739227\tv_banner_source_1776764943033.png"
+source_path = r"d:\DataForEntrepreneurs\PartyGamesHub\SharedAssets\modified_banner_source.png"
 base_res_path = r"d:\DataForEntrepreneurs\PartyGamesHub\Games\Launcher\android\app\src\main\res"
 
 sizes = {
