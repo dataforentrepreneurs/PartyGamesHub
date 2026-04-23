@@ -41,8 +41,8 @@ function App() {
       <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
         <img src="/logo.png" alt="Company Logo" style={{ height: '80px', width: 'auto' }} />
         <div style={{ textAlign: 'left' }}>
-          <h1 style={{ margin: 0 }}>PartyGames Hub</h1>
-          <p style={{ margin: 0, opacity: 0.8 }}>Select a game to start playing on the TV</p>
+          <h1 style={{ margin: 0 }}>Party Games Hub</h1>
+          <p style={{ margin: 0, opacity: 0.8 }}>Select a game to start playing</p>
         </div>
       </header>
 
@@ -104,16 +104,16 @@ function App() {
             <h2>Quit PartyGames Hub?</h2>
             <p style={{ margin: '1rem 0', opacity: 0.8 }}>Are you sure you want to exit to the TV Home Screen?</p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-              <button 
-                className="btn-primary" 
-                style={{ padding: '0.8rem 2rem', background: '#ff4b82' }} 
+              <button
+                className="btn-primary"
+                style={{ padding: '0.8rem 2rem', background: '#ff4b82' }}
                 onClick={() => (window as any).Capacitor?.Plugins?.App?.exitApp()}
               >
                 Quit Game
               </button>
-              <button 
-                className="btn-secondary" 
-                style={{ padding: '0.8rem 2rem' }} 
+              <button
+                className="btn-secondary"
+                style={{ padding: '0.8rem 2rem' }}
                 onClick={() => setShowExitConfirm(false)}
               >
                 Stay
