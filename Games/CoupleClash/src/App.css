@@ -34,9 +34,12 @@ body {
 }
 
 .host-view {
-  padding: 0.5rem;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
   overflow: hidden; /* Prevent scroll on TV */
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Glassmorphism */

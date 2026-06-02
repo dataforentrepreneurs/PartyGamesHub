@@ -217,7 +217,7 @@ body {
   grid-template-columns: minmax(0, 1fr) 350px;
   gap: 24px;
   width: 100%;
-  height: calc(100vh - 48px); 
+  height: 100%; 
   max-width: 1400px;
   margin: 0 auto;
 }
@@ -252,7 +252,17 @@ body {
   width: 100%;
 }
 
-@media (max-width: 1024px) {
+.host-view-tv {
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  padding: 5vh 5vw;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@media (max-width: 768px) {
   .dashboard-layout {
     grid-template-columns: 1fr;
     height: auto;

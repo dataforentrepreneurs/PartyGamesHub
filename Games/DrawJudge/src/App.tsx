@@ -596,7 +596,7 @@ function App() {
   };
 
   return (
-    <div className={isHostUser ? "w-full max-w-6xl px-4 flex-col" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
+    <div className={isHostUser ? "host-view-tv" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
 
       {showTutorial && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
@@ -818,7 +818,7 @@ function App() {
       )}
 
       {view === 'results' && isHostUser && (
-        <div className="flex-col w-full text-center animate-pop-in mt-4" style={{ margin: '0 auto', height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="flex-col w-full text-center animate-pop-in" style={{ margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="text-center mb-2 pt-2" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h2 className="title-giant" style={{ fontSize: '2rem', letterSpacing: '2px', margin: 0 }}>
               <Crown size={28} className="text-primary inline mr-2" style={{ verticalAlign: 'middle', animation: 'pulse-glow 2s infinite' }} />
@@ -831,7 +831,7 @@ function App() {
             )}
           </div>
 
-          <div className="flex-col md:flex-row" style={{ gap: '16px', alignItems: 'stretch', flex: 1, overflow: 'hidden' }}>
+          <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', width: '100%' }}>
             {/* Winner Card */}
             <div className="glass-panel" style={{ flex: 1.5, padding: '16px', border: '3px solid var(--primary)', boxShadow: '0 0 20px hsla(45, 100%, 50%, 0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '12px', textTransform: 'uppercase', textAlign: 'left' }}>
@@ -875,7 +875,7 @@ function App() {
                 const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
                 return (
                   <div key={i} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
-                    {r.image && <img src={r.image} alt="Drawing" style={{ width: '80px', height: 'auto', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '8px', background: '#1a1f33', border: '1px solid hsla(0,0%,100%,0.2)' }} />}
+                    {r.image && <img src={r.image} alt="Drawing" style={{ width: '140px', height: 'auto', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '12px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />}
                     <div style={{ flex: 1, textAlign: 'left' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                         <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>{player.name}</h4>

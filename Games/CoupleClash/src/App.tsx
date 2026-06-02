@@ -333,6 +333,22 @@ function App() {
   };
 
   const handleStartGame = () => {
+    const bluePlayers = Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'blue');
+    const pinkPlayers = Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'pink');
+
+    if (bluePlayers.length > 0 && !gameState?.blue_captain) {
+      alert("Please assign a Captain for the Blue Team before starting!");
+      return;
+    }
+    if (pinkPlayers.length > 0 && !gameState?.pink_captain) {
+      alert("Please assign a Captain for the Pink Team before starting!");
+      return;
+    }
+    if (bluePlayers.length === 0 && pinkPlayers.length === 0) {
+      alert("No players have joined the teams yet!");
+      return;
+    }
+
     ws.current?.send(JSON.stringify({ event: 'start_game', starting_team: 'blue' }));
   };
 
@@ -538,9 +554,25 @@ function App() {
         )}
 
         {isHostUser && (
-          <button className="btn btn-primary" style={{ marginTop: '2rem', padding: '1.5rem 4rem' }} onClick={handleStartGame}>
-            Start Game <ArrowRight size={24} />
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '2rem' }}>
+            {(!gameState?.blue_captain || !gameState?.pink_captain) && (
+              <div style={{
+                color: '#ff4b82',
+                fontWeight: 'bold',
+                fontSize: '1.1rem',
+                padding: '10px 20px',
+                background: 'rgba(255, 75, 130, 0.15)',
+                borderRadius: '8px',
+                border: '1px solid rgba(255, 75, 130, 0.3)',
+                textAlign: 'center'
+              }}>
+                ⚠️ Reminder: Please assign a Captain for both Blue and Pink teams before starting!
+              </div>
+            )}
+            <button className="btn btn-primary" style={{ padding: '1.5rem 4rem' }} onClick={handleStartGame}>
+              Start Game <ArrowRight size={24} />
+            </button>
+          </div>
         )}
       </div>
     );
