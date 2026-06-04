@@ -130,6 +130,18 @@ function App() {
   const [selectedPlayerHistory, setSelectedPlayerHistory] = useState<any[] | null>(null);
   const [selectedPlayerName, setSelectedPlayerName] = useState<string>('');
   const [isHostUser, setIsHostUser] = useState(false);
+
+  useEffect(() => {
+    if (isHostUser) {
+      document.documentElement.classList.add('host-mode');
+    } else {
+      document.documentElement.classList.remove('host-mode');
+    }
+    return () => {
+      document.documentElement.classList.remove('host-mode');
+    };
+  }, [isHostUser]);
+
   const [showFullGallery, setShowFullGallery] = useState(false);
   const [hasPlayedFinale, setHasPlayedFinale] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -597,6 +609,30 @@ function App() {
 
   return (
     <div className={isHostUser ? "host-view-tv" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
+      {isHostUser && view !== 'landing' && (
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="btn-secondary"
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            width: 'auto',
+            padding: '8px 16px',
+            fontSize: '0.9rem',
+            zIndex: 1000,
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          🏠 Hub
+        </button>
+      )}
 
       {showTutorial && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(5px)' }}>
@@ -631,7 +667,7 @@ function App() {
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (
         <div className="glass-panel text-center flex-row" style={{ display: 'inline-flex', alignSelf: 'flex-start', margin: '16px', padding: '12px 24px', zIndex: 50, border: '2px solid var(--primary)', alignItems: 'center', gap: '16px' }}>
           <div style={{ background: 'white', padding: '4px', borderRadius: '8px' }}>
-            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={60} />
+            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={view === 'drawing' ? 140 : 90} />
           </div>
           <div className="flex-col text-left">
             <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {backendConfig.host}/drawjudge</span>
@@ -681,73 +717,95 @@ function App() {
       )}
 
       {view === 'hostLobby' && (
-        <div className="glass-panel flex-col items-center">
-          <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '4px' }}>ROOM CODE</h2>
-          <h1 style={{ fontSize: '4rem', fontWeight: 900, color: 'var(--primary)', textShadow: '0 0 20px hsla(320,90%,65%,0.5)', letterSpacing: '4px' }}>{roomCode}</h1>
-          <p className="subtitle" style={{ marginBottom: '0', color: 'hsla(0,0%,100%,0.8)' }}>Open <b>{backendConfig.host}/drawjudge</b> and enter this code to Join!</p>
-          <div className="mb-4 mt-2 p-4" style={{ background: 'white', borderRadius: '16px' }}>
-            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={160} />
-          </div>
-          
-          <div className="w-full text-left p-4 mb-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.1)' }}>
-            <h3 style={{ color: 'var(--primary)', marginBottom: '8px', fontWeight: 'bold' }}>How to Play</h3>
-            <ol style={{ textAlign: 'left', display: 'inline-block', margin: 0, paddingLeft: '1.5rem', color: 'hsla(0,0%,100%,0.8)', fontSize: '0.9rem', lineHeight: '1.6' }}>
-              <li><strong>Scan the QR code</strong> to join on your phone.</li>
-              <li>Wait for the Host to hit <strong>'Start Round'</strong>.</li>
-              <li>Follow prompts and draw on your phone!</li>
-            </ol>
-          </div>
+        <div className="dashboard-layout animate-slide-up">
+          <div className="dashboard-main" style={{ gap: '16px' }}>
+            {/* Connection Card (QR + How to Play side-by-side) */}
+            <div className="glass-panel" style={{ padding: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: '32px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 0 20px rgba(255,255,255,0.05)' }}>
+                  <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={260} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                  <div>
+                    <span style={{ fontSize: '0.9rem', color: 'hsla(0,0%,100%,0.6)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Room Code</span>
+                    <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)', margin: 0, lineHeight: 1 }}>{roomCode}</h2>
+                  </div>
+                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
+                    <h3 style={{ color: 'var(--primary)', marginBottom: '8px', fontSize: '1.25rem', fontWeight: 'bold' }}>How to Play</h3>
+                    <ol style={{ margin: 0, paddingLeft: '1.25rem', color: 'hsla(0,0%,100%,0.8)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                      <li>Scan the QR code with your mobile device.</li>
+                      <li>Wait for the Host to configure and start the round.</li>
+                      <li>Follow the prompt and draw on your phone screen!</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-          <div className="flex-row w-full mb-4" style={{ gap: '16px' }}>
-            <select className="input-field" value={hostSelectedMode} onChange={e => setHostSelectedMode(e.target.value)} style={{ fontSize: '1rem', padding: '12px', flex: 2 }}>
-              <option value="classic">🏆 Classic Mode (60s)</option>
-              <option value="speed">⚡ Speed Sketch (15s)</option>
-              <option value="blind">🙈 Blind Draw (3s Prompt)</option>
-            </select>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', marginBottom: '4px', textAlign: 'left' }}>TOTAL ROUNDS</label>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                {[3, 5, 10, 15].map(r => (
-                  <button
-                    key={r}
-                    className={maxRounds === r ? 'btn-primary' : 'btn-secondary'}
-                    style={{ flex: 1, padding: '12px', fontSize: '1.2rem', margin: 0 }}
-                    onClick={() => {
-                      if (ws.current) ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: r }));
-                    }}
-                  >
-                    {r}
-                  </button>
-                ))}
+            {/* Players Card */}
+            <div className="glass-panel" style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '20px' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold', marginBottom: '12px', textAlign: 'left' }}>Players Joined ({players.length})</h3>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', overflowY: 'auto', flex: 1 }}>
+                {players.length === 0 ? (
+                  <span style={{ color: 'hsla(0,0%,100%,0.4)', fontStyle: 'italic' }}>Waiting for players to join...</span>
+                ) : (
+                  players.map((p, i) => <span key={i} style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 14px', borderRadius: '16px', fontSize: '0.95rem' }}>{p.name}</span>)
+                )}
               </div>
             </div>
           </div>
 
-          <div className="flex-row w-full mb-8" style={{ gap: '16px' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', marginBottom: '4px', textAlign: 'left' }}>THEME / PROMPT DECK</label>
-              <select className="input-field" value={theme} onChange={e => {
-                const val = e.target.value;
-                setTheme(val);
-                if (ws.current) {
-                  ws.current.send(JSON.stringify({ event: 'update_settings', theme: val }));
-                }
-              }} style={{ fontSize: '1rem', padding: '12px' }}>
-                <option value="Family">🏡 Family Friendly</option>
-                <option value="Kids">🧸 Kids & Silly</option>
-                <option value="Couples">💔 Couples Arguments</option>
-                <option value="Office">👔 Office Chaos</option>
-              </select>
-            </div>
-          </div>
+          {/* Settings Sidebar */}
+          <div className="dashboard-sidebar" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}>
+            <div className="flex-col" style={{ gap: '28px' }}>
+              <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '8px' }}>GAME SETTINGS</h3>
+              
+              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>GAME MODE</label>
+                <select className="input-field" value={hostSelectedMode} onChange={e => setHostSelectedMode(e.target.value)} style={{ fontSize: '0.95rem', padding: '10px' }}>
+                  <option value="classic">🏆 Classic Mode (60s)</option>
+                  <option value="speed">⚡ Speed Sketch (15s)</option>
+                  <option value="blind">🙈 Blind Draw (3s Prompt)</option>
+                </select>
+              </div>
 
-          <div className="w-full text-center mb-8">
-            <p className="subtitle mb-2">Players Joined ({players.length}):</p>
-            <div className="flex-row justify-center" style={{ flexWrap: 'wrap', gap: '8px' }}>
-              {players.map((p, i) => <span key={i} style={{ background: 'hsla(0,0%,100%,0.1)', padding: '4px 12px', borderRadius: '16px' }}>{p.name}</span>)}
+              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>TOTAL ROUNDS</label>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  {[3, 5, 10, 15].map(r => (
+                    <button
+                      key={r}
+                      className={maxRounds === r ? 'btn-primary' : 'btn-secondary'}
+                      style={{ flex: 1, padding: '10px 0', fontSize: '1rem', margin: 0 }}
+                      onClick={() => {
+                        if (ws.current) ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: r }));
+                      }}
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>THEME / PROMPT DECK</label>
+                <select className="input-field" value={theme} onChange={e => {
+                  const val = e.target.value;
+                  setTheme(val);
+                  if (ws.current) {
+                    ws.current.send(JSON.stringify({ event: 'update_settings', theme: val }));
+                  }
+                }} style={{ fontSize: '0.95rem', padding: '10px' }}>
+                  <option value="Family">🏡 Family Friendly</option>
+                  <option value="Kids">🧸 Kids & Silly</option>
+                  <option value="Couples">💔 Couples Arguments</option>
+                  <option value="Office">👔 Office Chaos</option>
+                </select>
+              </div>
             </div>
+
+            <button className="btn-primary w-full" onClick={handleStartGame} style={{ marginTop: '20px', padding: '16px' }}>Start Round</button>
           </div>
-          <button className="btn-primary w-full" onClick={handleStartGame}>Start Round</button>
         </div>
       )}
 

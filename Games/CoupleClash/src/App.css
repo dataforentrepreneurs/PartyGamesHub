@@ -34,7 +34,7 @@ body {
 }
 
 .host-view {
-  padding: 5vh 5vw;
+  padding: 2.5vh 3vw;
   box-sizing: border-box;
   overflow: hidden; /* Prevent scroll on TV */
   height: 100vh;
@@ -58,6 +58,7 @@ body {
 .host-view .glass-panel {
   padding: 0.5rem 1rem;
   margin-bottom: 0.5rem !important;
+  max-width: 100% !important;
 }
 
 .host-view .glass-panel h2 {
@@ -367,3 +368,9 @@ body {
     width: 100% !important;
   }
 }
+
+/* Fluid Viewport Scale for Host TVs */
+html.host-mode {
+  font-size: clamp(16px, 1.35vw, 30px);
+}
+

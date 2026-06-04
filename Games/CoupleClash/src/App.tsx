@@ -119,6 +119,17 @@ function App() {
   const playerIdRef = useRef(playerId); // CRITICAL: Ref for WebSocket closure
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isHostUser, setIsHostUser] = useState(false);
+
+  useEffect(() => {
+    if (isHostUser) {
+      document.documentElement.classList.add('host-mode');
+    } else {
+      document.documentElement.classList.remove('host-mode');
+    }
+    return () => {
+      document.documentElement.classList.remove('host-mode');
+    };
+  }, [isHostUser]);
   const [isConnected, setIsConnected] = useState(false);
   const [errorTiles, setErrorTiles] = useState<Set<number>>(new Set());
   const [isInviteLink, setIsInviteLink] = useState(false);
@@ -402,30 +413,30 @@ function App() {
           <h1 className="title-giant">Couple Clash</h1>
           <p className="subtitle">Picture Wars: Men vs Women</p>
         </div>
-        <div className="glass-panel" style={{ maxWidth: '400px' }}>
+        <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '2.5rem' }}>
           <input
             className="subtitle"
-            style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white' }}
+            style={{ width: '100%', padding: '1.2rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '1.2rem', marginBottom: '1.2rem' }}
             placeholder="Your Name"
             value={playerName}
             onChange={e => setPlayerName(e.target.value)}
           />
           {!isInviteLink && (
-            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1rem' }} onClick={handleCreateRoom}>
-              <Play size={20} /> Create Room
+            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.2rem', padding: '1.2rem', fontSize: '1.25rem' }} onClick={handleCreateRoom}>
+              <Play size={22} /> Create Room
             </button>
           )}
-          <div className="input-group" style={{ marginBottom: '1rem' }}>
+          <div className="input-group" style={{ marginBottom: '1.2rem', gap: '12px' }}>
             <input
               className="subtitle"
-              style={{ flex: 1, padding: '1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', margin: 0 }}
+              style={{ flex: 1, padding: '1.2rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', margin: 0, fontSize: '1.2rem' }}
               placeholder="Room Code"
               value={roomCode}
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
             />
-            <button className="btn btn-secondary" onClick={handleJoinRoom}>Join</button>
+            <button className="btn btn-secondary" style={{ padding: '1.2rem 2rem', fontSize: '1.2rem' }} onClick={handleJoinRoom}>Join</button>
           </div>
-          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '8px' }}>
+          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '8px', padding: '1.2rem', fontSize: '1.2rem' }}>
             ❓ How to Play
           </button>
         </div>
@@ -464,25 +475,64 @@ function App() {
   if (view === 'lobby') {
     return (
       <div className="app-container">
-        <h1 className="title-giant">Lobby</h1>
-        <p className="subtitle">Room Code: <span style={{ color: 'var(--blue-team)', fontWeight: '900' }}>{roomCode}</span></p>
-
         {isHostUser && (
-          <div className="glass-panel" style={{ textAlign: 'center', marginBottom: '1.5rem', animation: 'fadeIn 1s' }}>
-            <p className="subtitle" style={{ marginBottom: '1rem' }}>Scan to Join or browse to <b>{backendConfig.host}/coupleclash</b></p>
-            <div style={{ background: 'white', padding: '1.5rem', borderRadius: '24px', display: 'inline-block', boxShadow: '0 0 30px rgba(255,255,255,0.1)' }}>
-              <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={200} />
-            </div>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="btn btn-secondary"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: 'auto',
+              padding: '8px 16px',
+              fontSize: '0.9rem',
+              zIndex: 1000,
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: 0
+            }}
+          >
+            🏠 Hub
+          </button>
+        )}
+        {isHostUser ? (
+          <div className="glass-panel" style={{ textAlign: 'center', marginBottom: '1rem', padding: '20px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Left Column: QR Code */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                <div style={{ background: 'white', padding: '12px', borderRadius: '16px', display: 'flex', boxShadow: '0 0 20px rgba(255,255,255,0.05)' }}>
+                  <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={220} />
+                </div>
+                <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.6)', fontWeight: 'bold' }}>Scan to Join</p>
+              </div>
 
-            <div className="w-full text-left mt-4 p-4" style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.1)' }}>
-              <h3 style={{ color: 'var(--blue-team)', marginBottom: '8px', fontWeight: 'bold' }}>How to Play</h3>
-              <ol style={{ textAlign: 'left', display: 'inline-block', margin: 0, paddingLeft: '1.5rem', opacity: 0.9, fontSize: '0.9rem', lineHeight: '1.6' }}>
-                <li><strong>Scan the QR code</strong> to join a team on your phone.</li>
-                <li>Wait for the Host to set modes and hit <strong>'Start Game'</strong>.</li>
-                <li>Follow the team Captain's clues to click the right pictures!</li>
-              </ol>
+              {/* Right Column: Lobby Info + How to Play */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: 'white' }}>LOBBY</h1>
+                  <h2 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900 }}>Room Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></h2>
+                </div>
+                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
+                  <h3 style={{ color: 'var(--blue-team)', marginBottom: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>How to Play</h3>
+                  <ol style={{ margin: 0, paddingLeft: '1.25rem', opacity: 0.9, fontSize: '0.85rem', lineHeight: '1.5' }}>
+                    <li>Scan the QR code to join a team on your phone.</li>
+                    <li>Wait for the Host to set modes and hit 'Start Game'.</li>
+                    <li>Follow the team Captain's clues to click the right pictures!</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           </div>
+        ) : (
+          <>
+            <h1 className="title-giant">Lobby</h1>
+            <p className="subtitle">Room Code: <span style={{ color: 'var(--blue-team)', fontWeight: '900' }}>{roomCode}</span></p>
+          </>
         )}
         <div className="glass-panel" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '300px' }}>
@@ -528,15 +578,15 @@ function App() {
         {isHostUser && (
           <div className="glass-panel" style={{ marginTop: '2rem', textAlign: 'center' }}>
             <h2>Host Settings</h2>
-            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginBottom: '1rem', flexWrap: 'nowrap', overflowX: 'auto', width: '100%' }}>
               {(['classic', 'couples', 'movies', 'bollywood_real', 'kids'] as const).map(m => (
                 <button
                   key={m}
                   className={`btn ${gameState?.game_mode === m ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '0.5rem 1rem' }}
+                  style={{ padding: '8px 16px', fontSize: '0.85rem', whiteSpace: 'nowrap', flexShrink: 0 }}
                   onClick={() => handleSetMode(m)}
                 >
-                  {m.replace('_', ' ').toUpperCase()}
+                  {m === 'bollywood_real' ? 'BOOLYWOOD' : m.toUpperCase()}
                 </button>
               ))}
             </div>
@@ -569,7 +619,16 @@ function App() {
                 ⚠️ Reminder: Please assign a Captain for both Blue and Pink teams before starting!
               </div>
             )}
-            <button className="btn btn-primary" style={{ padding: '1.5rem 4rem' }} onClick={handleStartGame}>
+            <button 
+              className="btn btn-primary" 
+              style={{ 
+                padding: '1.5rem 4rem', 
+                opacity: (!gameState?.blue_captain || !gameState?.pink_captain) ? 0.5 : 1, 
+                cursor: (!gameState?.blue_captain || !gameState?.pink_captain) ? 'not-allowed' : 'pointer' 
+              }} 
+              onClick={handleStartGame}
+              disabled={!gameState?.blue_captain || !gameState?.pink_captain}
+            >
               Start Game <ArrowRight size={24} />
             </button>
           </div>
@@ -584,6 +643,31 @@ function App() {
 
     return (
       <div className="app-container">
+        {isHostUser && (
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="btn btn-secondary"
+            style={{
+              position: 'absolute',
+              top: '20px',
+              right: '20px',
+              width: 'auto',
+              padding: '8px 16px',
+              fontSize: '0.9rem',
+              zIndex: 1000,
+              background: 'rgba(255, 255, 255, 0.1)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              margin: 0
+            }}
+          >
+            🏠 Hub
+          </button>
+        )}
         <div className="animate-float">
           <h1 className="title-giant" style={{ color: winnerColor }}>{winnerName} Wins!</h1>
           <p className="subtitle">Congratulations to the victors!</p>
@@ -620,6 +704,31 @@ function App() {
 
   return (
     <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
+      {isHostUser && (
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="btn btn-secondary"
+          style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            width: 'auto',
+            padding: '8px 16px',
+            fontSize: '0.9rem',
+            zIndex: 1000,
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            margin: 0
+          }}
+        >
+          🏠 Hub
+        </button>
+      )}
       {/* Game HUD Header */}
       <div style={{
         display: 'grid',
@@ -633,36 +742,50 @@ function App() {
         {/* Column 1: Room Info (Left) */}
         <div style={{ justifySelf: 'start' }}>
           {isHostUser && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.05)', padding: '6px 12px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
-              <div style={{ background: 'white', padding: '2px', borderRadius: '4px', display: 'flex' }}>
-                <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={40} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+              <div style={{ background: 'white', padding: '4px', borderRadius: '6px', display: 'flex' }}>
+                <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={110} />
               </div>
               <div style={{ textAlign: 'left' }}>
-                <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 700 }}>Scan to Join</div>
-                <div style={{ fontSize: '1rem', fontWeight: 900 }}>Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></div>
+                <div style={{ fontSize: '0.75rem', opacity: 0.6, fontWeight: 700, textTransform: 'uppercase' }}>Scan to Join</div>
+                <div style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'hsla(0,0%,100%,0.8)', marginTop: '2px' }}>{backendConfig.host}/coupleclash</div>
+                <div style={{ fontSize: '1.25rem', fontWeight: 900, marginTop: '4px' }}>Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Column 2: Turn Indicator (Center) */}
+        {/* Column 2: Turn Indicator & Scores (Center stacked) */}
         <div style={{
-          color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)',
-          fontWeight: 900,
-          fontSize: '1.5rem',
-          textAlign: 'center',
-          textShadow: '0 0 20px rgba(0,0,0,0.5)'
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '8px',
+          textAlign: 'center'
         }}>
-          {gameState?.current_turn.toUpperCase()}'S TURN ({formatTime(elapsed)})
-        </div>
-
-        {/* Column 3: Scores (Right) */}
-        <div style={{ justifySelf: 'end', textAlign: 'right' }}>
-          <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+          <div style={{
+            color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)',
+            fontWeight: 900,
+            fontSize: '1.8rem',
+            textShadow: '0 0 20px rgba(0,0,0,0.5)',
+            lineHeight: 1.1
+          }}>
+            {gameState?.current_turn.toUpperCase()}'S TURN ({formatTime(elapsed)})
+          </div>
+          <div style={{ 
+            fontSize: '1.3rem', 
+            fontWeight: 700,
+            color: 'hsla(0,0%,100%,0.8)'
+          }}>
             <span style={{ color: 'var(--blue-team)' }}>{gameState?.scores.blue}</span> ({formatTime(gameState?.team_times.blue || 0)})
             {" - "}
             <span style={{ color: 'var(--pink-team)' }}>{gameState?.scores.pink}</span> ({formatTime(gameState?.team_times.pink || 0)})
           </div>
+        </div>
+
+        {/* Column 3: Placeholder to balance grid (Right) */}
+        <div style={{ justifySelf: 'end' }}>
+          {/* Empty to balance the grid layout */}
         </div>
       </div>
 

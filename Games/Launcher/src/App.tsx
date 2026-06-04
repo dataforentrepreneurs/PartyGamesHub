@@ -46,12 +46,22 @@ function App() {
 
   return (
     <div className="launcher-container">
-      <header style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: '3rem' }}>
-        <img src="/logo.png" alt="Company Logo" style={{ height: '140px', width: 'auto', marginBottom: '1rem', filter: 'drop-shadow(0 0 15px rgba(243, 156, 18, 0.4))' }} />
-        <div style={{ textAlign: 'center' }}>
-          <h1 style={{ margin: '0 0 8px 0', fontSize: '4.5rem' }}>Party Games Hub</h1>
+      <header style={{ 
+        display: 'flex', 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        gap: '4rem', 
+        marginBottom: '2.5rem',
+        width: '100%',
+        maxWidth: '1000px',
+        margin: '0 auto 2.5rem auto'
+      }}>
+        <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+          <h1 style={{ margin: 0, fontSize: '4.5rem', fontWeight: 900, lineHeight: '1.1' }}>Party Games Hub</h1>
           <p style={{ margin: 0, opacity: 0.8, fontSize: '1.5rem' }}>Select a game to start playing</p>
         </div>
+        <img src="/logo.png" alt="Company Logo" style={{ height: '140px', width: 'auto', filter: 'drop-shadow(0 0 15px rgba(243, 156, 18, 0.4))' }} />
       </header>
 
       <main className="cards-grid">
