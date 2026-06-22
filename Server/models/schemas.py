@@ -31,3 +31,14 @@ class BatchEvaluationResult(BaseModel):
     winner_explanation: str
     ai_latency_seconds: float = 0.0
 
+
+class FeedbackPayload(BaseModel):
+    feedback_type: str
+    rating: int
+    comment: str
+    room_code: Optional[str] = None
+    player_id: Optional[str] = None
+    platform: Optional[str] = None
+    game: Optional[str] = None
+
+
