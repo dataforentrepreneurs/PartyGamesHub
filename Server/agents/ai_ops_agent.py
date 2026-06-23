@@ -189,5 +189,11 @@ async def consume_anomaly_queue():
             logger.info("AI Ops Agent Consumer shutting down.")
             break
         except Exception as e:
+            # Handle expected socket read timeout when stream is empty
+            err_str = str(e)
+            if "Timeout reading from socket" in err_str or "TimeoutError" in type(e).__name__:
+                logger.debug("AI Ops Agent Consumer: Idle socket read timeout (no anomalies).")
+                continue
+                
             logger.error(f"Error in consume_anomaly_queue: {e}")
-            await asyncio.sleep(5) # Backoff on error
+            await asyncio.sleep(5) # Backoff on other errors
