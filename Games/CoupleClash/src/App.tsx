@@ -474,7 +474,7 @@ function App() {
 
   if (view === 'lobby') {
     return (
-      <div className="app-container">
+      <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
@@ -625,7 +625,7 @@ function App() {
     const winnerColor = gameState?.winner === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)';
 
     return (
-      <div className="app-container">
+      <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
@@ -724,7 +724,7 @@ function App() {
         </div>
       </div>
 
-      <div className="glass-panel" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+      <div className="glass-panel clue-banner">
         {gameState?.turn_phase === 'WAITING_FOR_CLUE' ? (
           <div>
             <h2 className="subtitle">Waiting for Captain to give a clue...</h2>

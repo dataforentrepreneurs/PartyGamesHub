@@ -34,9 +34,9 @@ body {
 }
 
 .host-view {
-  padding: 2.5vh 3vw;
+  padding: 1.5vh 2vw; /* Reduced from 2.5vh 3vw */
   box-sizing: border-box;
-  overflow: hidden; /* Prevent scroll on TV */
+  overflow: hidden auto; /* Allows scroll backup, hides horizontal bar */
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -145,7 +145,7 @@ body {
 .host-view .game-grid {
   margin-top: 0.2rem;
   gap: 6px;
-  max-height: 65vh;
+  max-height: 60vh; /* Reduced from 65vh */
   padding: 0 10px;
 }
 
@@ -160,9 +160,8 @@ body {
 }
 
 .host-view .tile {
-  /* Scale tiles to ensure 5 rows fit in 65vh */
-  max-height: calc(13vh - 8px);
-  max-width: 100%;
+  /* Scale tiles to ensure 5 rows fit in 60vh */
+  max-height: calc(11vh - 6px); /* Reduced from calc(13vh - 8px) to fit 5 rows under 60vh */
   width: auto;
   margin: 0 auto;
 }
@@ -382,7 +381,7 @@ html.host-mode #root {
   height: 100vh;
   max-width: 100vw;
   max-height: 100vh;
-  overflow: hidden;
+  overflow: hidden auto; /* Allows vertical scrolling fallback if needed */
 }
 
 /* Responsive Lobby Connection Details */
@@ -536,6 +535,21 @@ html.host-mode #root {
   margin-bottom: 1rem;
   padding: 0 1rem;
   gap: 16px;
+}
+
+.host-view .game-hud-header {
+  margin-bottom: 0.25rem !important;
+}
+
+.clue-banner {
+  text-align: center;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 1200px;
+}
+
+.host-view .clue-banner {
+  margin-bottom: 0.5rem !important;
 }
 
 .game-hud-left {
