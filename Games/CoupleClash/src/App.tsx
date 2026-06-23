@@ -410,8 +410,8 @@ function App() {
     return (
       <div className="app-container">
         <div className="animate-float">
-          <h1 className="title-giant">Couple Clash</h1>
-          <p className="subtitle">Picture Wars: Men vs Women</p>
+          <h1 className="title-giant">CodePic</h1>
+          <p className="subtitle">Picture Wars: Blue vs Pink</p>
         </div>
         <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '2.5rem' }}>
           <input
@@ -478,48 +478,31 @@ function App() {
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
-            className="btn btn-secondary"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              width: 'auto',
-              padding: '8px 16px',
-              fontSize: '0.9rem',
-              zIndex: 1000,
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              margin: 0
-            }}
+            className="hub-btn"
           >
             🏠 Hub
           </button>
         )}
         {isHostUser ? (
           <div className="glass-panel" style={{ textAlign: 'center', marginBottom: '1rem', padding: '20px', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '32px', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="lobby-connection-row">
               {/* Left Column: QR Code */}
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div style={{ background: 'white', padding: '12px', borderRadius: '16px', display: 'flex', boxShadow: '0 0 20px rgba(255,255,255,0.05)' }}>
+              <div className="lobby-qr-column">
+                <div className="lobby-qr-wrapper">
                   <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={220} />
                 </div>
-                <p style={{ margin: '8px 0 0 0', fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.6)', fontWeight: 'bold' }}>Scan to Join</p>
+                <p className="lobby-qr-label">Scan to Join</p>
               </div>
 
               {/* Right Column: Lobby Info + How to Play */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                  <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 900, color: 'white' }}>LOBBY</h1>
-                  <h2 style={{ margin: 0, fontSize: '1.8rem', fontWeight: 900 }}>Room Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></h2>
+              <div className="lobby-info-column">
+                <div className="lobby-info-header">
+                  <h1>LOBBY</h1>
+                  <h2>Room Code: <span style={{ color: 'var(--blue-team)' }}>{roomCode}</span></h2>
                 </div>
-                <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
-                  <h3 style={{ color: 'var(--blue-team)', marginBottom: '8px', fontSize: '1.1rem', fontWeight: 'bold' }}>How to Play</h3>
-                  <ol style={{ margin: 0, paddingLeft: '1.25rem', opacity: 0.9, fontSize: '0.85rem', lineHeight: '1.5' }}>
+                <div className="lobby-instructions">
+                  <h3 className="lobby-instructions-title">How to Play</h3>
+                  <ol className="lobby-instructions-list">
                     <li>Scan the QR code to join a team on your phone.</li>
                     <li>Wait for the Host to set modes and hit 'Start Game'.</li>
                     <li>Follow the team Captain's clues to click the right pictures!</li>
@@ -536,7 +519,7 @@ function App() {
         )}
         <div className="glass-panel" style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: '300px' }}>
-            <h2>Blue Team (Men)</h2>
+            <h2>Blue Team</h2>
             <button className="btn btn-primary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('blue')}>Join Blue</button>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'blue').map(([id, p]) => (
@@ -555,7 +538,7 @@ function App() {
             </ul>
           </div>
           <div style={{ flex: 1, minWidth: '300px' }}>
-            <h2>Pink Team (Women)</h2>
+            <h2>Pink Team</h2>
             <button className="btn btn-secondary" style={{ margin: '1rem 0' }} onClick={() => handleSelectTeam('pink')}>Join Pink</button>
             <ul style={{ listStyle: 'none', padding: 0 }}>
               {Object.entries(gameState?.players || {}).filter(([_, p]) => p.team === 'pink').map(([id, p]) => (
@@ -597,7 +580,7 @@ function App() {
                 style={{ padding: '0.5rem 1rem' }}
                 onClick={() => handleSetStartingTeam(gameState?.starting_team_pref === 'blue' ? 'pink' : 'blue')}
               >
-                {gameState?.starting_team_pref === 'blue' ? 'MEN (Blue)' : 'WOMEN (Pink)'}
+                {gameState?.starting_team_pref === 'blue' ? 'BLUE TEAM' : 'PINK TEAM'}
               </button>
             </div>
           </div>
@@ -646,24 +629,7 @@ function App() {
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
-            className="btn btn-secondary"
-            style={{
-              position: 'absolute',
-              top: '20px',
-              right: '20px',
-              width: 'auto',
-              padding: '8px 16px',
-              fontSize: '0.9rem',
-              zIndex: 1000,
-              background: 'rgba(255, 255, 255, 0.1)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              margin: 0
-            }}
+            className="hub-btn"
           >
             🏠 Hub
           </button>
@@ -707,40 +673,15 @@ function App() {
       {isHostUser && (
         <button 
           onClick={() => window.location.href = '/'}
-          className="btn btn-secondary"
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            width: 'auto',
-            padding: '8px 16px',
-            fontSize: '0.9rem',
-            zIndex: 1000,
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            margin: 0
-          }}
+          className="hub-btn"
         >
           🏠 Hub
         </button>
       )}
       {/* Game HUD Header */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: '1200px',
-        marginBottom: '1rem',
-        padding: '0 1rem'
-      }}>
+      <div className="game-hud-header">
         {/* Column 1: Room Info (Left) */}
-        <div style={{ justifySelf: 'start' }}>
+        <div className="game-hud-left">
           {isHostUser && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '14px', background: 'rgba(255,255,255,0.05)', padding: '8px 16px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
               <div style={{ background: 'white', padding: '4px', borderRadius: '6px', display: 'flex' }}>
@@ -756,13 +697,7 @@ function App() {
         </div>
 
         {/* Column 2: Turn Indicator & Scores (Center stacked) */}
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '8px',
-          textAlign: 'center'
-        }}>
+        <div className="game-hud-center">
           <div style={{
             color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)',
             fontWeight: 900,
@@ -784,7 +719,7 @@ function App() {
         </div>
 
         {/* Column 3: Placeholder to balance grid (Right) */}
-        <div style={{ justifySelf: 'end' }}>
+        <div className="game-hud-right">
           {/* Empty to balance the grid layout */}
         </div>
       </div>

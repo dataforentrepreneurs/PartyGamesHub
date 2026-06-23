@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/react'
 import './index.css'
 import { setupTelemetry } from './telemetry'
 
-setupTelemetry('CoupleClash');
+setupTelemetry('CodePic');
 import App from './App.tsx'
 
 const posthogKey = import.meta.env.VITE_POSTHOG_KEY;

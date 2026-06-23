@@ -129,8 +129,8 @@ function App() {
             <span style={{ fontSize: '6rem' }}>🎯</span>
           </div>
           <div className="card-content">
-            <h2>Couple Clash</h2>
-            <p>Picture Wars: Team-based image guessing!</p>
+            <h2>CodePic</h2>
+            <p>Picture Wars: Blue vs Pink Team!</p>
           </div>
         </a>
       </main>

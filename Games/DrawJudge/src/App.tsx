@@ -612,23 +612,7 @@ function App() {
       {isHostUser && view !== 'landing' && (
         <button 
           onClick={() => window.location.href = '/'}
-          className="btn-secondary"
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            width: 'auto',
-            padding: '8px 16px',
-            fontSize: '0.9rem',
-            zIndex: 1000,
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
+          className="hub-btn"
         >
           🏠 Hub
         </button>
@@ -665,8 +649,8 @@ function App() {
 
       {/* Persistent Room Code on Host screen */}
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (
-        <div className="glass-panel text-center flex-row" style={{ display: 'inline-flex', alignSelf: 'flex-start', margin: '16px', padding: '12px 24px', zIndex: 50, border: '2px solid var(--primary)', alignItems: 'center', gap: '16px' }}>
-          <div style={{ background: 'white', padding: '4px', borderRadius: '8px' }}>
+        <div className="glass-panel text-center persistent-room-code-card">
+          <div style={{ background: 'white', padding: '4px', borderRadius: '8px', display: 'flex' }}>
             <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={view === 'drawing' ? 140 : 90} />
           </div>
           <div className="flex-col text-left">
@@ -721,18 +705,18 @@ function App() {
           <div className="dashboard-main" style={{ gap: '16px' }}>
             {/* Connection Card (QR + How to Play side-by-side) */}
             <div className="glass-panel" style={{ padding: '20px' }}>
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '32px', alignItems: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: 'white', padding: '16px', borderRadius: '16px', boxShadow: '0 0 20px rgba(255,255,255,0.05)' }}>
+              <div className="lobby-connection-row">
+                <div className="lobby-qr-column">
                   <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={260} />
                 </div>
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', textAlign: 'left' }}>
-                  <div>
+                <div className="lobby-info-column">
+                  <div className="lobby-info-header">
                     <span style={{ fontSize: '0.9rem', color: 'hsla(0,0%,100%,0.6)', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>Room Code</span>
                     <h2 style={{ fontSize: '2.5rem', fontWeight: 900, color: 'var(--primary)', margin: 0, lineHeight: 1 }}>{roomCode}</h2>
                   </div>
-                  <div style={{ background: 'rgba(0,0,0,0.2)', padding: '16px', borderRadius: '12px', border: '1px solid hsla(0,0%,100%,0.05)' }}>
-                    <h3 style={{ color: 'var(--primary)', marginBottom: '8px', fontSize: '1.25rem', fontWeight: 'bold' }}>How to Play</h3>
-                    <ol style={{ margin: 0, paddingLeft: '1.25rem', color: 'hsla(0,0%,100%,0.8)', fontSize: '0.95rem', lineHeight: '1.6' }}>
+                  <div className="lobby-instructions">
+                    <h3 className="lobby-instructions-title">How to Play</h3>
+                    <ol className="lobby-instructions-list">
                       <li>Scan the QR code with your mobile device.</li>
                       <li>Wait for the Host to configure and start the round.</li>
                       <li>Follow the prompt and draw on your phone screen!</li>
@@ -836,16 +820,16 @@ function App() {
         isHostUser ? (
           <div className="dashboard-layout animate-slide-up">
             <div className="dashboard-main justify-center items-center">
-              <div className="glass-panel text-center w-full" style={{ padding: '48px', maxWidth: '800px', margin: 'auto' }}>
+              <div className="glass-panel text-center w-full host-drawing-panel">
                 <h2 className={`title-giant mb-4 ${timeLeft <= 10 ? 'text-primary' : ''}`} style={{ fontSize: '4rem', textShadow: '0 0 20px hsla(320,90%,65%,0.3)' }}>
                   {timeLeft}s
                 </h2>
-                <p className="subtitle mb-8" style={{ fontSize: '2.5rem', color: 'white', fontWeight: 800 }}>
+                <p className="subtitle mb-8 host-prompt-text">
                   Prompt: "{gameMode === 'blind' ? '???' : prompt}"
                 </p>
-                <div className="mb-8 p-6" style={{ background: 'rgba(0,0,0,0.5)', borderRadius: '24px', border: '2px solid hsla(0,0%,100%,0.2)' }}>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'white', marginBottom: '8px' }}>RECEIVED</h3>
-                  <h1 style={{ fontSize: '5rem', fontWeight: 900, color: 'var(--primary)', lineHeight: 1 }}>{submissionCount} / {players.length}</h1>
+                <div className="host-received-box">
+                  <h3 className="host-received-title">RECEIVED</h3>
+                  <h1 className="host-received-count">{submissionCount} / {players.length}</h1>
                 </div>
                 <p className="subtitle" style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem' }}>Look at your phones to draw!</p>
               </div>
@@ -889,7 +873,7 @@ function App() {
             )}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', alignItems: 'stretch', flex: 1, overflow: 'hidden', width: '100%' }}>
+          <div className="results-flex-container">
             {/* Winner Card */}
             <div className="glass-panel" style={{ flex: 1.5, padding: '16px', border: '3px solid var(--primary)', boxShadow: '0 0 20px hsla(45, 100%, 50%, 0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
               <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '12px', textTransform: 'uppercase', textAlign: 'left' }}>
