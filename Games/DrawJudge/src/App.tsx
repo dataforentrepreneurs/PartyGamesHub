@@ -71,7 +71,7 @@ let memoryStorage: Record<string, string> = {};
 
 function safeGetItem(key: string) {
   try {
-    return localStorage.getItem(key) || memoryStorage[key] || null;
+    return sessionStorage.getItem(key) || memoryStorage[key] || null;
   } catch (e) {
     return memoryStorage[key] || null;
   }
@@ -79,9 +79,9 @@ function safeGetItem(key: string) {
 
 function safeSetItem(key: string, value: string) {
   try {
-    localStorage.setItem(key, value);
+    sessionStorage.setItem(key, value);
   } catch (e) {
-    console.warn("localStorage blocked, using memory.");
+    console.warn("sessionStorage blocked, using memory.");
   }
   memoryStorage[key] = value;
 }
