@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Play, Users, ArrowLeft, Loader2, Crown, Trophy, Share2 } from 'lucide-react';
+import { Play, Users, ArrowLeft, Loader2, Crown, Trophy, Share2, Volume2, VolumeX, MessageSquare, Home, LogOut } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import { toJpeg } from 'html-to-image';
@@ -7,7 +7,16 @@ import { pushEvent, getPlatform } from './analytics';
 import DrawCanvas from './DrawCanvas';
 import mainLogo from './assets/gold.png';
 
+const isSoundEnabled = () => {
+  try {
+    return localStorage.getItem('dj_sound_enabled') !== 'false';
+  } catch (e) {
+    return true;
+  }
+};
+
 const playTickSound = () => {
+  if (!isSoundEnabled()) return;
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc = ctx.createOscillator();
@@ -25,6 +34,7 @@ const playTickSound = () => {
 };
 
 const playTadaSound = () => {
+  if (!isSoundEnabled()) return;
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     const osc1 = ctx.createOscillator(); const osc2 = ctx.createOscillator(); const osc3 = ctx.createOscillator();
@@ -187,6 +197,117 @@ function App() {
     { img: `${basePath}player2_results.png`, title: 'Personal Results', text: 'Check your phone to see how well you scored on this round.' },
     { img: `${basePath}host5_leaderboard.png`, title: 'Round Results', text: 'Scores are tallied up! Keep playing until the final round to see who becomes the ultimate Draw Judge champion!' }
   ];
+
+  const [savedHostSession, setSavedHostSession] = useState<{ roomCode: string; hostId: string } | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => isSoundEnabled());
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Feedback State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('general');
+  const [rating, setRating] = useState<number | null>(null);
+  const [feedbackComment, setFeedbackComment] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [feedbackSuccess, setFeedbackSuccess] = useState(false);
+
+  // Sound Toggle Handler
+  const toggleSound = () => {
+    setSoundEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('dj_sound_enabled', next ? 'true' : 'false');
+      } catch (e) {}
+      return next;
+    });
+  };
+
+  // Check saved host session on mount
+  useEffect(() => {
+    try {
+      const r = safeGetItem('dj_host_room_code');
+      const h = safeGetItem('dj_host_id');
+      const t = safeGetItem('dj_host_timestamp');
+      if (r && h && t) {
+        const ageHours = (Date.now() - parseInt(t, 10)) / (1000 * 60 * 60);
+        if (ageHours < 4) {
+          setSavedHostSession({ roomCode: r, hostId: h });
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleResumeHostSession = () => {
+    if (!savedHostSession) return;
+    setRoomCode(savedHostSession.roomCode);
+    setPlayerId(savedHostSession.hostId);
+    setPlayerName("Host");
+    safeSetItem('dj_player_name', "Host");
+    safeSetItem('dj_player_id', savedHostSession.hostId);
+    setIsHostUser(true);
+    connectWebSocket(savedHostSession.roomCode, true, savedHostSession.hostId);
+  };
+
+  const handleDismissHostSession = () => {
+    safeSetItem('dj_host_room_code', '');
+    safeSetItem('dj_host_id', '');
+    safeSetItem('dj_host_timestamp', '');
+    setSavedHostSession(null);
+  };
+
+  const handleLeaveRoom = () => {
+    if (ws.current) {
+      try {
+        ws.current.close();
+      } catch (e) {}
+      ws.current = null;
+    }
+    setRoomCode('');
+    setIsHostUser(false);
+    setView('landing');
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!rating || !feedbackComment.trim()) return;
+    setIsSubmittingFeedback(true);
+    try {
+      const h = backendConfig.host.startsWith('http') ? backendConfig.host : `https://${backendConfig.host}`;
+      const url = `${h}/api/feedback`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback_type: feedbackType,
+          rating: rating,
+          comment: feedbackComment.trim(),
+          game: 'drawjudge',
+          platform: getPlatform()
+        })
+      });
+      if (response.ok) {
+        setFeedbackSuccess(true);
+      } else {
+        alert('Failed to submit feedback. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+      alert('Network error. Failed to submit feedback.');
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        if (viewRef.current !== 'landing' && viewRef.current !== 'join') {
+          e.preventDefault();
+          setShowExitConfirm(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const viewRef = useRef(view);
   const hasSubmittedRef = useRef(hasSubmittedThisRound);
@@ -520,6 +641,10 @@ function App() {
       setPlayerName("Host");
       safeSetItem('dj_player_name', "Host");
       safeSetItem('dj_player_id', data.host_id);
+      safeSetItem('dj_host_room_code', data.room_code);
+      safeSetItem('dj_host_id', data.host_id);
+      safeSetItem('dj_host_timestamp', Date.now().toString());
+      setSavedHostSession({ roomCode: data.room_code, hostId: data.host_id });
       connectWebSocket(data.room_code, true, data.host_id);
       setView('hostLobby');
       pushEvent('lobby_created', data.room_code, 'host', data.host_id, { player_count: 1 });
@@ -639,7 +764,7 @@ function App() {
         </div>
       )}
 
-      {!isConnected && (
+      {!isConnected && view !== 'landing' && view !== 'join' && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <Loader2 size={64} className="text-primary animate-spin mb-4" />
           <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold' }}>Reconnecting to Server</h2>
@@ -659,12 +784,71 @@ function App() {
           </div>
         </div>
       )}
+
       {view === 'landing' && (
         <div className="flex-col animate-float">
-          <div className="text-center mb-8 ">
+          {/* Top Bar with Hub, Sound Toggle, and Feedback */}
+          <div className="game-top-bar">
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="top-bar-btn"
+              title="Back to Hub"
+              aria-label="Back to Hub"
+            >
+              <Home size={18} /> Hub
+            </button>
+            <div className="top-bar-right">
+              <button 
+                onClick={toggleSound}
+                className="top-bar-btn icon-only"
+                title={soundEnabled ? "Mute Sound Effects" : "Enable Sound Effects"}
+                aria-label="Sound Toggle"
+              >
+                {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
+              </button>
+              <button 
+                onClick={() => {
+                  setFeedbackSuccess(false);
+                  setRating(null);
+                  setFeedbackComment('');
+                  setFeedbackType('general');
+                  setShowFeedbackModal(true);
+                }}
+                className="top-bar-btn"
+                title="Give Feedback"
+                aria-label="Give Feedback"
+              >
+                <MessageSquare size={18} /> Feedback
+              </button>
+            </div>
+          </div>
+
+          <div className="text-center mb-6">
             <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '350px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 20px hsla(45, 100%, 50%, 0.3))' }} />
             <p className="subtitle mt-4">Draw. Submit. Let AI decide.</p>
           </div>
+
+          {/* Host Fallback Recovery Card */}
+          {savedHostSession && (
+            <div className="host-recovery-banner">
+              <div className="host-recovery-content">
+                <span className="host-recovery-icon">👑</span>
+                <div>
+                  <div className="host-recovery-title">Active Host Session Found</div>
+                  <div className="host-recovery-desc">Room Code: <strong style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>{savedHostSession.roomCode}</strong></div>
+                </div>
+              </div>
+              <div className="host-recovery-actions">
+                <button className="btn-primary" onClick={handleResumeHostSession}>
+                  Resume Hosting
+                </button>
+                <button className="btn-secondary" onClick={handleDismissHostSession}>
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="glass-panel flex-col">
             <button className="btn-primary" onClick={handleCreateRoom} style={{ animation: 'pulse-glow 2s infinite' }}><Play size={24} /> Create Game</button>
             <button className="btn-secondary" onClick={() => setView('join')}><Users size={24} /> Join Room</button>
@@ -788,7 +972,17 @@ function App() {
               </div>
             </div>
 
-            <button className="btn-primary w-full" onClick={handleStartGame} style={{ marginTop: '20px', padding: '16px' }}>Start Round</button>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+              <button 
+                className="btn-secondary" 
+                onClick={() => setShowExitConfirm(true)} 
+                style={{ padding: '16px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                title="Exit Game Room"
+              >
+                <LogOut size={20} /> Exit
+              </button>
+              <button className="btn-primary" onClick={handleStartGame} style={{ flex: 1, padding: '16px' }}>Start Round</button>
+            </div>
           </div>
         </div>
       )}
@@ -813,6 +1007,15 @@ function App() {
               <h1 style={{ fontSize: '2.5rem', color: 'var(--primary)', fontWeight: 900, lineHeight: 1 }}>Round {currentRound} / {maxRounds}</h1>
             </div>
           )}
+
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '20px', flexWrap: 'wrap' }}>
+            <button className="btn-secondary" onClick={handleLeaveRoom} style={{ padding: '10px 20px', fontSize: '0.95rem', display: 'inline-flex', alignItems: 'center', gap: '6px', width: 'auto' }}>
+              <ArrowLeft size={18} /> Leave Room
+            </button>
+            <button className="btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ padding: '10px 20px', fontSize: '0.95rem', width: 'auto' }}>
+              ❓ Rules
+            </button>
+          </div>
         </div>
       )}
 
@@ -1245,6 +1448,174 @@ function App() {
             {(!isHostUser && currentRound >= maxRounds) && (
               <div style={{ marginTop: '32px', textAlign: 'center', color: 'hsla(0,0%,100%,0.4)', fontSize: '1rem', fontWeight: 900, letterSpacing: '4px', textTransform: 'uppercase' }}>
                 DRAW JUDGE 🤖🎨
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Floating Feedback Trigger Button (for in-game access) */}
+      {view !== 'landing' && (
+        <button 
+          onClick={() => {
+            setFeedbackSuccess(false);
+            setRating(null);
+            setFeedbackComment('');
+            setFeedbackType('general');
+            setShowFeedbackModal(true);
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            right: '16px',
+            zIndex: 90,
+            background: 'rgba(245, 158, 11, 0.15)',
+            border: '1px solid rgba(245, 158, 11, 0.4)',
+            color: 'white',
+            borderRadius: '9999px',
+            padding: '8px 16px',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+          title="Give Feedback"
+        >
+          <MessageSquare size={16} /> Feedback
+        </button>
+      )}
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div className="glass-panel text-center" style={{ padding: '2rem', maxWidth: '420px', width: '90%', border: '2px solid var(--primary)' }}>
+            <h2 style={{ fontSize: '1.8rem', color: 'var(--primary)', marginBottom: '0.5rem' }}>Quit Draw Judge?</h2>
+            <p style={{ margin: '1rem 0 1.5rem 0', opacity: 0.85, fontSize: '1.05rem' }}>
+              Are you sure you want to return to the Party Games Hub?
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                className="btn-primary"
+                style={{ padding: '0.8rem 1.8rem', background: '#ef4444' }}
+                onClick={() => window.location.href = '/'}
+              >
+                Quit to Hub
+              </button>
+              <button
+                className="btn-secondary"
+                style={{ padding: '0.8rem 1.8rem' }}
+                onClick={() => setShowExitConfirm(false)}
+              >
+                Stay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Feedback Modal Overlay */}
+      {showFeedbackModal && (
+        <div className="feedback-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div className="feedback-modal-content" onClick={(e) => e.stopPropagation()}>
+            {!feedbackSuccess ? (
+              <>
+                <h2>Submit Feedback</h2>
+                <p className="subtitle">Tell us what you think or report an issue!</p>
+                
+                <div className="feedback-form-group">
+                  <label htmlFor="feedback-type">Category</label>
+                  <select 
+                    id="feedback-type"
+                    className="feedback-select" 
+                    value={feedbackType} 
+                    onChange={(e) => setFeedbackType(e.target.value)}
+                  >
+                    <option value="general">💬 General Feedback</option>
+                    <option value="bug">🐛 Bug Report</option>
+                    <option value="feature">💡 Feature Suggestion</option>
+                    <option value="love_it">❤️ Love the Game</option>
+                  </select>
+                </div>
+
+                <div className="feedback-form-group">
+                  <label>How would you rate your experience?</label>
+                  <div className="rating-emojis">
+                    {[
+                      { val: 1, char: '😠', label: 'Angry' },
+                      { val: 2, char: '🙁', label: 'Sad' },
+                      { val: 3, char: '😐', label: 'Neutral' },
+                      { val: 4, char: '🙂', label: 'Happy' },
+                      { val: 5, char: '😀', label: 'Excited' }
+                    ].map((item) => (
+                      <button
+                        key={item.val}
+                        type="button"
+                        className={`rating-emoji-btn ${rating === item.val ? 'active' : ''}`}
+                        onClick={() => setRating(item.val)}
+                        title={item.label}
+                      >
+                        {item.char}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="feedback-form-group">
+                  <label htmlFor="feedback-comment">Comments</label>
+                  <textarea 
+                    id="feedback-comment"
+                    className="feedback-textarea" 
+                    placeholder="Tell us more about your experience..." 
+                    value={feedbackComment}
+                    onChange={(e) => setFeedbackComment(e.target.value)}
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    className="btn-cancel" 
+                    onClick={() => setShowFeedbackModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn-submit" 
+                    onClick={handleSubmitFeedback}
+                    disabled={!rating || !feedbackComment.trim() || isSubmittingFeedback}
+                  >
+                    {isSubmittingFeedback ? 'Sending...' : 'Submit'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="feedback-success-state">
+                <span className="success-icon">🚀</span>
+                <h2>Thank you!</h2>
+                <p style={{ margin: '1rem 0 2rem 0', opacity: 0.8, textAlign: 'center' }}>
+                  Your feedback helps us make Draw Judge even better.
+                </p>
+                <button 
+                  className="btn-submit" 
+                  style={{ width: '100%', padding: '0.8rem' }}
+                  onClick={() => setShowFeedbackModal(false)}
+                >
+                  Close
+                </button>
               </div>
             )}
           </div>

@@ -28,7 +28,7 @@ keytool -genkey -v -keystore partygameshub.jks -keyalg RSA -keysize 2048 -validi
 - [x] **Focus Highlight**: Already implemented via `:focus` scale and border effects in `App.css`.
 - [x] **Overscan Margins**: 5% padding added to `launcher-container`.
 - [x] **Banner Image**: 320x180 banners generated and placed in `res/mipmap-*`.
-- [ ] **leanback:true**: Ensure `android:banner` and `android:isGame="true"` are set in `AndroidManifest.xml`.
+- [x] **leanback:true**: Verified `android:banner` and `android:isGame="true"` in `AndroidManifest.xml`.
 
 ---
 

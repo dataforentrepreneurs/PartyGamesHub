@@ -599,4 +599,290 @@ html.host-mode #root {
   }
 }
 
+/* --- Top Navigation Bar & Controls --- */
+.game-top-bar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  right: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 100;
+  pointer-events: auto;
+}
 
+.top-bar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.top-bar-btn:hover, .top-bar-btn:focus {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: var(--blue-team);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 128, 255, 0.3);
+  outline: none;
+}
+
+/* --- Host Session Recovery Card --- */
+.host-recovery-banner {
+  background: linear-gradient(135deg, rgba(79, 128, 255, 0.2) 0%, rgba(255, 75, 130, 0.2) 100%);
+  border: 2px solid var(--blue-team);
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  width: 100%;
+  max-width: 480px;
+  box-shadow: 0 0 25px rgba(79, 128, 255, 0.35);
+  animation: pulse-glow 3s infinite alternate;
+}
+
+.host-recovery-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.host-recovery-icon {
+  font-size: 2.2rem;
+  filter: drop-shadow(0 0 8px rgba(79, 128, 255, 0.5));
+}
+
+.host-recovery-title {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: #ffd700;
+  line-height: 1.2;
+}
+
+.host-recovery-desc {
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.host-recovery-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.host-recovery-actions button {
+  flex: 1;
+  padding: 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+/* --- Live Reconnecting Banner --- */
+.reconnecting-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(239, 68, 68, 0.9);
+  color: white;
+  padding: 10px 24px;
+  border-radius: 9999px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 10000;
+  backdrop-filter: blur(8px);
+  animation: pulse-glow 2s infinite alternate;
+}
+
+/* --- Feedback Modal --- */
+.feedback-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(10, 10, 18, 0.88);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.feedback-modal-content {
+  background: #181c2e;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 480px;
+  padding: 2rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 35px rgba(79, 128, 255, 0.2);
+  text-align: left;
+  animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.feedback-modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 0.3rem;
+  color: var(--blue-team);
+  font-size: 1.8rem;
+  font-weight: 900;
+}
+
+.feedback-modal-content p.subtitle {
+  margin: 0 0 1.2rem 0;
+  opacity: 0.75;
+  font-size: 0.95rem;
+}
+
+.feedback-form-group {
+  margin-bottom: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.feedback-form-group label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ccc;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.feedback-select, .feedback-textarea {
+  background: #0f1322;
+  border: 2px solid rgba(255, 255, 255, 0.12);
+  color: white;
+  padding: 0.75rem;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  transition: all 0.2s;
+}
+
+.feedback-select:focus, .feedback-textarea:focus {
+  outline: none;
+  border-color: var(--blue-team);
+  box-shadow: 0 0 12px rgba(79, 128, 255, 0.3);
+}
+
+.feedback-textarea {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.rating-emojis {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.rating-emoji-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.06);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 8px;
+  font-size: 1.8rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rating-emoji-btn:hover, .rating-emoji-btn:focus {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  outline: none;
+}
+
+.rating-emoji-btn.active {
+  background: rgba(79, 128, 255, 0.2);
+  border-color: var(--blue-team);
+  box-shadow: 0 0 15px rgba(79, 128, 255, 0.4);
+  transform: scale(1.1);
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 1.5rem;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, var(--blue-team) 0%, #3b82f6 100%);
+  border: none;
+  color: white;
+  font-weight: 800;
+  padding: 0.6rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(79, 128, 255, 0.4);
+}
+
+.btn-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(79, 128, 255, 0.6);
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.feedback-success-state {
+  text-align: center;
+  padding: 1.5rem 0;
+}
+
+.feedback-success-state .success-icon {
+  font-size: 3.5rem;
+  display: block;
+  margin-bottom: 0.5rem;
+  animation: bounce 1s infinite alternate;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}

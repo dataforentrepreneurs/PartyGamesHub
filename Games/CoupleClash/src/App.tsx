@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Play, Heart, Bomb, ArrowRight, User, X, RefreshCw } from 'lucide-react';
+import { Play, Heart, Bomb, ArrowRight, User, X, RefreshCw, Home, ArrowLeft, MessageSquare, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
 import './App.css';
@@ -149,6 +149,104 @@ function App() {
     { img: `${basePath}host4_reveal.png`, title: 'Voting and Revealing', text: 'The team discusses and votes for the tiles. Guess right to keep going, but beware the Assassin!' },
     { img: `${basePath}host5_chanceover.png`, title: 'Next Round', text: 'On the first wrong reveal the turn ends. First team to reveal all their tiles wins!' }
   ];
+
+  const [savedHostSession, setSavedHostSession] = useState<{ roomCode: string; hostId: string } | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  // Feedback State
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackType, setFeedbackType] = useState('general');
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // Check saved host session on mount
+  useEffect(() => {
+    try {
+      const r = safeGetItem('cc_host_room_code');
+      const h = safeGetItem('cc_host_id');
+      const t = safeGetItem('cc_host_timestamp');
+      if (r && h && t) {
+        const ageHours = (Date.now() - parseInt(t, 10)) / (1000 * 60 * 60);
+        if (ageHours < 4) {
+          setSavedHostSession({ roomCode: r, hostId: h });
+        }
+      }
+    } catch (e) {}
+  }, []);
+
+  const handleResumeHostSession = () => {
+    if (!savedHostSession) return;
+    setRoomCode(savedHostSession.roomCode);
+    setPlayerId(savedHostSession.hostId);
+    playerIdRef.current = savedHostSession.hostId;
+    safeSetItem('cc_player_id', savedHostSession.hostId);
+    connectWebSocket(savedHostSession.roomCode, savedHostSession.hostId);
+  };
+
+  const handleDismissHostSession = () => {
+    safeSetItem('cc_host_room_code', '');
+    safeSetItem('cc_host_id', '');
+    safeSetItem('cc_host_timestamp', '');
+    setSavedHostSession(null);
+  };
+
+  const handleLeaveRoom = () => {
+    if (ws.current) {
+      try {
+        ws.current.close();
+      } catch (e) {}
+      ws.current = null;
+    }
+    setRoomCode('');
+    setGameState(null);
+    setIsHostUser(false);
+    setView('landing');
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!rating || !comment.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const host = backendConfig.host.startsWith('http') ? backendConfig.host : `https://${backendConfig.host}`;
+      const url = `${host}/api/feedback`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          feedback_type: feedbackType,
+          rating: rating,
+          comment: comment.trim(),
+          game: 'coupleclash',
+          platform: (window as any).Capacitor?.isNativePlatform ? 'android' : 'web'
+        })
+      });
+      if (response.ok) {
+        setSubmitSuccess(true);
+      } else {
+        alert('Failed to submit feedback. Please try again.');
+      }
+    } catch (err) {
+      console.error('Error submitting feedback:', err);
+      alert('Network error. Failed to submit feedback.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Backspace') {
+        if (viewRef.current !== 'landing') {
+          e.preventDefault();
+          setShowExitConfirm(true);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const viewRef = useRef(view);
 
@@ -321,6 +419,10 @@ function App() {
 
       // CRITICAL: Store the host_id from the server so the WebSocket recognizes us as Host
       safeSetItem('cc_player_id', data.host_id);
+      safeSetItem('cc_host_room_code', data.room_code);
+      safeSetItem('cc_host_id', data.host_id);
+      safeSetItem('cc_host_timestamp', Date.now().toString());
+      setSavedHostSession({ roomCode: data.room_code, hostId: data.host_id });
       setPlayerId(data.host_id);
       playerIdRef.current = data.host_id; // Sync the Ref immediately!
 
@@ -405,14 +507,243 @@ function App() {
     ws.current?.send(JSON.stringify({ event: 'reset_game' }));
   };
 
+  const renderFeedbackAndExitModals = () => (
+    <>
+      {/* Floating In-Game Feedback Button */}
+      {view !== 'landing' && (
+        <button 
+          onClick={() => {
+            setSubmitSuccess(false);
+            setRating(null);
+            setComment('');
+            setFeedbackType('general');
+            setShowFeedbackModal(true);
+          }}
+          style={{
+            position: 'fixed',
+            bottom: '16px',
+            right: '16px',
+            zIndex: 90,
+            background: 'rgba(79, 128, 255, 0.2)',
+            border: '1px solid rgba(79, 128, 255, 0.4)',
+            color: 'white',
+            borderRadius: '9999px',
+            padding: '8px 16px',
+            fontSize: '0.85rem',
+            fontWeight: 700,
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px'
+          }}
+          title="Give Feedback"
+        >
+          <MessageSquare size={16} /> Feedback
+        </button>
+      )}
+
+      {/* Exit Confirmation Modal */}
+      {showExitConfirm && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.85)',
+          backdropFilter: 'blur(10px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000
+        }}>
+          <div className="glass-panel text-center" style={{ padding: '2rem', maxWidth: '420px', width: '90%', border: '2px solid var(--blue-team)' }}>
+            <h2 style={{ fontSize: '1.8rem', color: 'var(--blue-team)', marginBottom: '0.5rem' }}>Quit CodePic?</h2>
+            <p style={{ margin: '1rem 0 1.5rem 0', opacity: 0.85, fontSize: '1.05rem' }}>
+              Are you sure you want to return to the Party Games Hub?
+            </p>
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+              <button
+                className="btn btn-primary"
+                style={{ padding: '0.8rem 1.8rem', background: '#ef4444' }}
+                onClick={() => window.location.href = '/'}
+              >
+                Quit to Hub
+              </button>
+              <button
+                className="btn btn-secondary"
+                style={{ padding: '0.8rem 1.8rem' }}
+                onClick={() => setShowExitConfirm(false)}
+              >
+                Stay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reconnecting Overlay */}
+      {!isConnected && view !== 'landing' && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          <Loader2 size={64} className="text-primary animate-spin" style={{ color: 'var(--blue-team)', marginBottom: '1rem' }} />
+          <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', margin: '0' }}>Reconnecting to Server</h2>
+          <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem', marginTop: '0.5rem' }}>Please wait...</p>
+        </div>
+      )}
+
+      {/* Feedback Modal Overlay */}
+      {showFeedbackModal && (
+        <div className="feedback-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+          <div className="feedback-modal-content" onClick={(e) => e.stopPropagation()}>
+            {!submitSuccess ? (
+              <>
+                <h2>Submit Feedback</h2>
+                <p className="subtitle">Tell us what you think or report an issue!</p>
+                
+                <div className="feedback-form-group">
+                  <label htmlFor="feedback-type">Category</label>
+                  <select 
+                    id="feedback-type"
+                    className="feedback-select" 
+                    value={feedbackType} 
+                    onChange={(e) => setFeedbackType(e.target.value)}
+                  >
+                    <option value="general">💬 General Feedback</option>
+                    <option value="bug">🐛 Bug Report</option>
+                    <option value="feature">💡 Feature Suggestion</option>
+                    <option value="love_it">❤️ Love the Game</option>
+                  </select>
+                </div>
+
+                <div className="feedback-form-group">
+                  <label>How would you rate your experience?</label>
+                  <div className="rating-emojis">
+                    {[
+                      { val: 1, char: '😠', label: 'Angry' },
+                      { val: 2, char: '🙁', label: 'Sad' },
+                      { val: 3, char: '😐', label: 'Neutral' },
+                      { val: 4, char: '🙂', label: 'Happy' },
+                      { val: 5, char: '😀', label: 'Excited' }
+                    ].map((item) => (
+                      <button
+                        key={item.val}
+                        type="button"
+                        className={`rating-emoji-btn ${rating === item.val ? 'active' : ''}`}
+                        onClick={() => setRating(item.val)}
+                        title={item.label}
+                      >
+                        {item.char}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="feedback-form-group">
+                  <label htmlFor="feedback-comment">Comments</label>
+                  <textarea 
+                    id="feedback-comment"
+                    className="feedback-textarea" 
+                    placeholder="Tell us more about your experience..." 
+                    value={comment}
+                    onChange={(e) => setComment(e.target.value)}
+                  />
+                </div>
+
+                <div className="modal-actions">
+                  <button 
+                    className="btn-cancel" 
+                    onClick={() => setShowFeedbackModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn-submit" 
+                    onClick={handleSubmitFeedback}
+                    disabled={!rating || !comment.trim() || isSubmitting}
+                  >
+                    {isSubmitting ? 'Sending...' : 'Submit'}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="feedback-success-state">
+                <span className="success-icon">🚀</span>
+                <h2>Thank you!</h2>
+                <p style={{ margin: '1rem 0 2rem 0', opacity: 0.8, textAlign: 'center' }}>
+                  Your feedback helps us make CodePic even better.
+                </p>
+                <button 
+                  className="btn-submit" 
+                  style={{ width: '100%', padding: '0.8rem' }}
+                  onClick={() => setShowFeedbackModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+
   // --- Render Helpers ---
   if (view === 'landing') {
     return (
       <div className="app-container">
+        {/* Top Navigation Bar */}
+        <div className="game-top-bar">
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="top-bar-btn"
+            title="Back to Hub"
+            aria-label="Back to Hub"
+          >
+            <Home size={18} /> Hub
+          </button>
+          <button 
+            onClick={() => {
+              setSubmitSuccess(false);
+              setRating(null);
+              setComment('');
+              setFeedbackType('general');
+              setShowFeedbackModal(true);
+            }}
+            className="top-bar-btn"
+            title="Give Feedback"
+            aria-label="Give Feedback"
+          >
+            <MessageSquare size={18} /> Feedback
+          </button>
+        </div>
+
         <div className="animate-float">
           <h1 className="title-giant">CodePic</h1>
           <p className="subtitle">Picture Wars: Blue vs Pink</p>
         </div>
+
+        {/* Host Recovery Banner */}
+        {savedHostSession && (
+          <div className="host-recovery-banner">
+            <div className="host-recovery-content">
+              <span className="host-recovery-icon">👑</span>
+              <div>
+                <div className="host-recovery-title">Active Host Session Found</div>
+                <div className="host-recovery-desc">Room Code: <strong style={{ color: '#ffd700', fontSize: '1.1rem' }}>{savedHostSession.roomCode}</strong></div>
+              </div>
+            </div>
+            <div className="host-recovery-actions">
+              <button className="btn btn-primary" onClick={handleResumeHostSession}>
+                Resume Hosting
+              </button>
+              <button className="btn btn-secondary" onClick={handleDismissHostSession}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '2.5rem' }}>
           <input
             className="subtitle"
@@ -462,12 +793,99 @@ function App() {
           </div>
         )}
 
-        <a
-          href="mailto:feedback@partygameshub.com"
-          style={{ marginTop: '24px', opacity: 0.6, fontSize: '0.9rem', color: 'white', textDecoration: 'underline' }}
-        >
-          Report Issue or Send Feedback
-        </a>
+        {/* Feedback Modal Overlay */}
+        {showFeedbackModal && (
+          <div className="feedback-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
+            <div className="feedback-modal-content" onClick={(e) => e.stopPropagation()}>
+              {!submitSuccess ? (
+                <>
+                  <h2>Submit Feedback</h2>
+                  <p className="subtitle">Tell us what you think or report an issue!</p>
+                  
+                  <div className="feedback-form-group">
+                    <label htmlFor="feedback-type">Category</label>
+                    <select 
+                      id="feedback-type"
+                      className="feedback-select" 
+                      value={feedbackType} 
+                      onChange={(e) => setFeedbackType(e.target.value)}
+                    >
+                      <option value="general">💬 General Feedback</option>
+                      <option value="bug">🐛 Bug Report</option>
+                      <option value="feature">💡 Feature Suggestion</option>
+                      <option value="love_it">❤️ Love the Game</option>
+                    </select>
+                  </div>
+
+                  <div className="feedback-form-group">
+                    <label>How would you rate your experience?</label>
+                    <div className="rating-emojis">
+                      {[
+                        { val: 1, char: '😠', label: 'Angry' },
+                        { val: 2, char: '🙁', label: 'Sad' },
+                        { val: 3, char: '😐', label: 'Neutral' },
+                        { val: 4, char: '🙂', label: 'Happy' },
+                        { val: 5, char: '😀', label: 'Excited' }
+                      ].map((item) => (
+                        <button
+                          key={item.val}
+                          type="button"
+                          className={`rating-emoji-btn ${rating === item.val ? 'active' : ''}`}
+                          onClick={() => setRating(item.val)}
+                          title={item.label}
+                        >
+                          {item.char}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="feedback-form-group">
+                    <label htmlFor="feedback-comment">Comments</label>
+                    <textarea 
+                      id="feedback-comment"
+                      className="feedback-textarea" 
+                      placeholder="Tell us more about your experience..." 
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                    />
+                  </div>
+
+                  <div className="modal-actions">
+                    <button 
+                      className="btn-cancel" 
+                      onClick={() => setShowFeedbackModal(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="btn-submit" 
+                      onClick={handleSubmitFeedback}
+                      disabled={!rating || !comment.trim() || isSubmitting}
+                    >
+                      {isSubmitting ? 'Sending...' : 'Submit'}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <div className="feedback-success-state">
+                  <span className="success-icon">🚀</span>
+                  <h2>Thank you!</h2>
+                  <p style={{ margin: '1rem 0 2rem 0', opacity: 0.8, textAlign: 'center' }}>
+                    Your feedback helps us make CodePic even better.
+                  </p>
+                  <button 
+                    className="btn-submit" 
+                    style={{ width: '100%', padding: '0.8rem' }}
+                    onClick={() => setShowFeedbackModal(false)}
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -513,6 +931,14 @@ function App() {
           </div>
         ) : (
           <>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', maxWidth: '640px', marginBottom: '1rem' }}>
+              <button className="btn btn-secondary" onClick={handleLeaveRoom} style={{ padding: '8px 16px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                <ArrowLeft size={16} /> Leave Room
+              </button>
+              <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                ❓ Rules
+              </button>
+            </div>
             <h1 className="title-giant">Lobby</h1>
             <p className="subtitle">Room Code: <span style={{ color: 'var(--blue-team)', fontWeight: '900' }}>{roomCode}</span></p>
           </>
@@ -616,6 +1042,7 @@ function App() {
             </button>
           </div>
         )}
+        {renderFeedbackAndExitModals()}
       </div>
     );
   }
@@ -660,6 +1087,7 @@ function App() {
             <p className="subtitle">Waiting for Host to start a new round...</p>
           )}
         </div>
+        {renderFeedbackAndExitModals()}
       </div>
     );
   }
@@ -827,13 +1255,7 @@ function App() {
         })}
       </div>
 
-      {!isConnected && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <RefreshCw size={64} className="text-primary animate-spin" style={{ color: 'var(--blue-team)', marginBottom: '1rem' }} />
-          <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', margin: '0' }}>Reconnecting to Server</h2>
-          <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem', marginTop: '0.5rem' }}>Please wait...</p>
-        </div>
-      )}
+      {renderFeedbackAndExitModals()}
     </div>
   );
 }
