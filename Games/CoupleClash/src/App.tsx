@@ -119,6 +119,8 @@ function App() {
   const playerIdRef = useRef(playerId); // CRITICAL: Ref for WebSocket closure
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [isHostUser, setIsHostUser] = useState(false);
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
+  const [createRoomCountdown, setCreateRoomCountdown] = useState(60);
 
   useEffect(() => {
     if (isHostUser) {
@@ -405,6 +407,12 @@ function App() {
   // --- Handlers ---
   const handleCreateRoom = async () => {
     console.log("DEBUG: handleCreateRoom clicked");
+    setIsCreatingRoom(true);
+    setCreateRoomCountdown(60);
+    const timerInterval = setInterval(() => {
+      setCreateRoomCountdown(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+
     try {
       const url = `${backendConfig.apiBase}/rooms`;
       console.log(`DEBUG: POST calling ${url}`);
@@ -432,6 +440,9 @@ function App() {
       console.error("DEBUG: handleCreateRoom FAILED:", e);
       const url = `${backendConfig.apiBase}/rooms`;
       alert(`Failed to create room! URL: ${url}. Error: ${e.message || e}`);
+    } finally {
+      clearInterval(timerInterval);
+      setIsCreatingRoom(false);
     }
   };
 
@@ -589,6 +600,77 @@ function App() {
           <Loader2 size={64} className="text-primary animate-spin" style={{ color: 'var(--blue-team)', marginBottom: '1rem' }} />
           <h2 style={{ fontSize: '2rem', color: 'white', fontWeight: 'bold', margin: '0' }}>Reconnecting to Server</h2>
           <p style={{ color: 'hsla(0,0%,100%,0.7)', fontSize: '1.2rem', marginTop: '0.5rem' }}>Please wait...</p>
+        </div>
+      )}
+
+      {/* 60s Server Loading Modal when Creating Room */}
+      {isCreatingRoom && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(10, 15, 25, 0.92)',
+          backdropFilter: 'blur(16px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999,
+          padding: '20px'
+        }}>
+          <div className="glass-panel" style={{
+            maxWidth: '520px',
+            width: '100%',
+            textAlign: 'center',
+            padding: '2.5rem',
+            border: '2px solid var(--blue-team)',
+            boxShadow: '0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(56, 189, 248, 0.25)'
+          }}>
+            <Loader2 className="animate-spin text-primary" size={54} style={{ color: 'var(--blue-team)', margin: '0 auto 1.5rem auto' }} />
+            <h2 style={{ fontSize: '2rem', margin: '0 0 0.5rem 0', color: '#fff' }}>Creating Picture Battle</h2>
+            <div style={{
+              display: 'inline-block',
+              background: 'rgba(56, 189, 248, 0.15)',
+              border: '1px solid var(--blue-team)',
+              color: 'var(--blue-team)',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              fontWeight: 'bold',
+              fontSize: '1rem',
+              margin: '0.5rem 0 1rem 0'
+            }}>
+              ⏳ Waking Up Cloud Server: {createRoomCountdown}s
+            </div>
+
+            <div style={{
+              width: '100%',
+              height: '8px',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              margin: '1rem 0'
+            }}>
+              <div style={{
+                height: '100%',
+                background: 'linear-gradient(90deg, var(--blue-team), var(--pink-team))',
+                width: `${Math.min(100, Math.max(0, ((60 - createRoomCountdown) / 60) * 100))}%`,
+                transition: 'width 0.3s ease'
+              }} />
+            </div>
+
+            <p style={{ opacity: 0.85, fontSize: '0.95rem', lineHeight: '1.5', margin: '0 0 1.5rem 0', color: '#d0d7de' }}>
+              Free cloud instances take ~30–60 seconds to wake up from standby. Please keep this screen open while your game initializes!
+            </p>
+
+            <button
+              className="btn btn-secondary"
+              onClick={() => setIsCreatingRoom(false)}
+              style={{ fontSize: '0.9rem', padding: '0.6rem 1.4rem' }}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       )}
 

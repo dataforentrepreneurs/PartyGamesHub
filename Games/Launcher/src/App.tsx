@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import './App.css'
 
 const getBackendUrl = () => {
@@ -20,8 +20,13 @@ const getBackendUrl = () => {
     return 'https://play.d4e.ai';
   }
 
-  // Local development
-  return 'http://localhost:8000';
+  // Local development on default ports 8000 or 5173
+  if (currentHost && (currentHost.includes(':8000') || currentHost.includes(':5173'))) {
+    return 'http://localhost:8000';
+  }
+
+  // Default to production domain (e.g. for preview testing on port 4173)
+  return 'https://play.d4e.ai';
 };
 
 function App() {
@@ -33,21 +38,112 @@ function App() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
-  // Background wake-up for Render server
+  // Splash Video & Server Countdown State
+  const [showSplash, setShowSplash] = useState(() => {
+    try {
+      return sessionStorage.getItem('pgh_intro_shown') !== 'true';
+    } catch {
+      return true;
+    }
+  });
+  const [countdown, setCountdown] = useState(60);
+  const [serverOnline, setServerOnline] = useState(false);
+  const [isMuted, setIsMuted] = useState(false); // Audio enabled by default!
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  // 60-Second countdown timer
   useEffect(() => {
-    fetch(`${getBackendUrl()}/api/health`)
-      .then(res => res.json())
-      .then(data => console.log('Server wake-up complete:', data))
-      .catch(err => console.log('Server wake-up ping failed (expected if waking from deep sleep):', err));
+    if (!showSplash) return;
+    const timer = setInterval(() => {
+      setCountdown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [showSplash]);
+
+  // Background wake-up & polling for Render server
+  useEffect(() => {
+    let isMounted = true;
+    let pollTimeout: any = null;
+
+    const checkServerHealth = async () => {
+      try {
+        const res = await fetch(`${getBackendUrl()}/api/health`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Server wake-up complete:', data);
+          if (isMounted) {
+            setServerOnline(true);
+          }
+          return;
+        }
+      } catch (err) {
+        console.log('Server waking up from sleep...', err);
+      }
+
+      if (isMounted) {
+        pollTimeout = setTimeout(checkServerHealth, 2000);
+      }
+    };
+
+    checkServerHealth();
+
+    return () => {
+      isMounted = false;
+      if (pollTimeout) clearTimeout(pollTimeout);
+    };
   }, []);
+
+  // Play video with audio enabled by default (fallback to muted if browser blocks unmuted autoplay)
+  useEffect(() => {
+    if (showSplash && videoRef.current) {
+      videoRef.current.muted = isMuted;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.warn("Autoplay with sound restricted by browser policy, fallback to muted:", error);
+          setIsMuted(true);
+          if (videoRef.current) {
+            videoRef.current.muted = true;
+            videoRef.current.play().catch(() => {});
+          }
+        });
+      }
+    }
+  }, [showSplash]);
+
+  const toggleSound = () => {
+    if (videoRef.current) {
+      const nextMuted = !isMuted;
+      videoRef.current.muted = nextMuted;
+      setIsMuted(nextMuted);
+    }
+  };
+
+  const handleDismissSplash = () => {
+    try {
+      sessionStorage.setItem('pgh_intro_shown', 'true');
+    } catch {}
+    setShowSplash(false);
+  };
+
+  const handleVideoEnded = () => {
+    // When the brand advertisement completes for the first time, immediately display the hub screen
+    handleDismissSplash();
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Remote control DPAD_CENTER / Enter / Space on splash screen
+      if (showSplash) {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'NumpadEnter') {
+          e.preventDefault();
+          handleDismissSplash();
+          return;
+        }
+      }
+
       // Android TV "Back" button often maps to Escape or Backspace in WebViews
       if (e.key === 'Escape' || e.key === 'Backspace') {
-        // If we are already on the home screen of the launcher, show confirm
-        // Otherwise, the browser back behavior might be okay, but for a single-page launcher, 
-        // we want to catch it.
         e.preventDefault();
         setShowExitConfirm(true);
       }
@@ -55,18 +151,14 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [showSplash]);
 
   const go = (path: string) => {
-    // Chromecast / Android TV remotes sometimes don't "activate" <a> on DPAD_CENTER.
-    // We use a direct location assignment to bypass potential click-blocking.
     console.log(`Navigating to: ${path}`);
     window.location.href = path;
   }
 
   const onCardKeyDown = (e: React.KeyboardEvent, path: string) => {
-    // Standard TV remote "OK/Select" button emits 'Enter'. 
-    // We also support ' ' (SpaceBar) as some remotes map to it.
     if (e.key === 'Enter' || e.key === 'NumpadEnter' || e.key === ' ') {
       e.preventDefault();
       go(path);
@@ -75,6 +167,34 @@ function App() {
 
   return (
     <div className="launcher-container">
+      {/* 1. BRAND ADVERTISEMENT INTRO SCREEN */}
+      {showSplash && (
+        <div className="splash-overlay">
+          <div className="splash-video-container">
+            <video
+              ref={videoRef}
+              src="./logo_loading_video.mp4"
+              autoPlay
+              playsInline
+              muted={isMuted}
+              onEnded={handleVideoEnded}
+              className="splash-brand-video"
+            />
+
+            {/* Clean Speaker Icon Only */}
+            <button
+              className="splash-mute-icon-btn"
+              onClick={toggleSound}
+              tabIndex={0}
+              aria-label={isMuted ? "Unmute" : "Mute"}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? '🔇' : '🔊'}
+            </button>
+          </div>
+        </div>
+      )}
+
       <header style={{ 
         display: 'flex', 
         flexDirection: 'row', 
@@ -89,6 +209,12 @@ function App() {
         <div style={{ textAlign: 'left', display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <h1 style={{ margin: 0, fontSize: '4.5rem', fontWeight: 900, lineHeight: '1.1' }}>Party Games Hub</h1>
           <p style={{ margin: 0, opacity: 0.8, fontSize: '1.5rem' }}>Select a game to start playing</p>
+          <div 
+            className="server-status-pill"
+            title="Render Cloud Server Status"
+          >
+            <span>{serverOnline ? '🟢 Cloud Server Online' : `🟡 Cloud Server Connecting (${countdown}s)...`}</span>
+          </div>
         </div>
         <img src="/logo.png" alt="Company Logo" style={{ height: '140px', width: 'auto', filter: 'drop-shadow(0 0 15px rgba(243, 156, 18, 0.4))' }} />
       </header>

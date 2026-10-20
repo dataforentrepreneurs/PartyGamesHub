@@ -1,0 +1,21 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Clutter & Agent scratch
+brain/
+*Recordings*
+*.log
