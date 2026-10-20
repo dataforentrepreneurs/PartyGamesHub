@@ -35,12 +35,15 @@ Now that Google has granted production access, follow these steps to publish you
 1. **Release name**: `1.2.0 (18)`
 2. **Release notes (`en-US`)**:
 ```text
-Official Production Release of Party Games Hub!
-- Distraction-free brand video intro with instant audio toggle
-- Seamless server status indicator & cold-start timers
-- Host session recovery to prevent room interruptions
-- In-game direct feedback tool
-- Full Android TV remote D-Pad navigation support
+🎉 We are officially live! Welcome to Party Games Hub!
+
+Transform your living room into the ultimate party night:
+🎨 Draw Judge: A hilarious sketch battle where players draw on their phones and an AI judge scores their art!
+🎯 CodePic: Fast-paced team picture wars where Blue vs Pink battle to guess secret clues!
+
+No controllers or app downloads needed—just scan the TV QR code with your phone to jump right in.
+
+Grab your family, gather your friends, and come enjoy the fun! 🚀
 ```
 
 ### Step 5: Check Target Countries / Regions
