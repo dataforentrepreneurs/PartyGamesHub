@@ -349,11 +349,14 @@ function App() {
       const mockImg2 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%23131b2e'/><rect x='80' y='120' width='140' height='160' rx='20' fill='%23ec4899'/><circle cx='150' cy='200' r='40' fill='%23facc15'/><text x='150' y='350' font-size='22' font-weight='bold' fill='white' text-anchor='middle'>Cyber Dog</text></svg>";
       const mockImg3 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%231a1528'/><polygon points='150,80 80,240 220,240' fill='%23a855f7'/><circle cx='150' cy='170' r='25' fill='%2338bdf8'/><text x='150' y='350' font-size='22' font-weight='bold' fill='%234ade80' text-anchor='middle'>Rocket</text></svg>";
 
+      const is2Player = params.get('test')?.includes('2p') || params.get('2p') === 'true';
       const mockPlayers = [
         { id: playerId, name: 'Alice Walker', score: isWinner ? 285 : 95 },
         { id: 'p2', name: 'Bob Wonder', score: isWinner ? 240 : 88 },
-        { id: 'p3', name: 'Charlie Champion', score: isWinner ? 210 : 76 },
-        { id: 'p4', name: 'Diana Masterpiece', score: isWinner ? 165 : 65 },
+        ...(is2Player ? [] : [
+          { id: 'p3', name: 'Charlie Champion', score: isWinner ? 210 : 76 },
+          { id: 'p4', name: 'Diana Masterpiece', score: isWinner ? 165 : 65 },
+        ])
       ];
       const mockResults = [
         {
@@ -370,13 +373,22 @@ function App() {
           scores: { prompt_relevance: 23, creativity: 22, clarity: 22, entertainment: 21 },
           comment: "Very bold lines and delightful composition."
         },
-        {
-          submission_id: 'p3',
-          image: mockImg3,
-          total_score: 76,
-          scores: { prompt_relevance: 20, creativity: 19, clarity: 18, entertainment: 19 },
-          comment: "Hilarious interpretation of the prompt!"
-        }
+        ...(is2Player ? [] : [
+          {
+            submission_id: 'p3',
+            image: mockImg3,
+            total_score: 76,
+            scores: { prompt_relevance: 20, creativity: 19, clarity: 18, entertainment: 19 },
+            comment: "Hilarious interpretation of the prompt!"
+          },
+          {
+            submission_id: 'p4',
+            image: mockImg,
+            total_score: 65,
+            scores: { prompt_relevance: 18, creativity: 17, clarity: 16, entertainment: 18 },
+            comment: "Charming minimalist design."
+          }
+        ])
       ];
 
       const mockHistory = {
@@ -386,11 +398,19 @@ function App() {
           { round: 3, prompt: "Space rocket", image: mockImg3, total_score: 94, comment: "Ready for takeoff!" }
         ],
         p2: [
-          { round: 1, prompt: "Dancing astronaut", image: mockImg2, total_score: 88, comment: "Great vibe." },
-          { round: 2, prompt: "Cyberpunk dog", image: mockImg, total_score: 80, comment: "Nice colors." }
+          { round: 1, prompt: "Grandpa juggling apples poorly", image: mockImg2, total_score: 88, comment: "Great vibe." },
+          { round: 2, prompt: "Cyberpunk dog with sunglasses", image: mockImg, total_score: 80, comment: "Nice colors." },
+          { round: 3, prompt: "Space rocket launching to Mars", image: mockImg3, total_score: 72, comment: "Very bold lines." }
         ],
         p3: [
-          { round: 1, prompt: "Dancing astronaut", image: mockImg3, total_score: 76, comment: "Funny drawing." }
+          { round: 1, prompt: "Dancing astronaut", image: mockImg3, total_score: 76, comment: "Funny drawing." },
+          { round: 2, prompt: "Cyberpunk dog", image: mockImg2, total_score: 68, comment: "Quirky pup." },
+          { round: 3, prompt: "Space rocket", image: mockImg, total_score: 66, comment: "Good rocket form." }
+        ],
+        p4: [
+          { round: 1, prompt: "Dancing astronaut", image: mockImg, total_score: 65, comment: "Cute sketch." },
+          { round: 2, prompt: "Cyberpunk dog", image: mockImg3, total_score: 55, comment: "Minimalist take." },
+          { round: 3, prompt: "Space rocket", image: mockImg2, total_score: 45, comment: "Fast doodle." }
         ]
       };
 
@@ -839,6 +859,24 @@ function App() {
     }
   };
 
+  const openPlayerHistoryGallery = (p: { id?: string; name: string }) => {
+    setSelectedPlayerName(p.name);
+    const targetId = p.id;
+    const history = (targetId ? allPlayerHistory[targetId] : null) 
+      || results.filter(r => r.submission_id === targetId);
+
+    if (history && history.length > 0) {
+      setSelectedPlayerHistory(history);
+    } else {
+      const fallback = results.filter(r => r.submission_id === targetId);
+      setSelectedPlayerHistory(fallback);
+    }
+
+    if (ws.current && ws.current.readyState === WebSocket.OPEN && targetId) {
+      ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: targetId }));
+    }
+  };
+
   return (
     <div className={isHostUser ? "host-view-tv" : "w-full flex-col h-full"} style={isHostUser ? {} : { flex: 1, padding: 0 }}>
       {isHostUser && view !== 'landing' && (
@@ -1252,10 +1290,16 @@ function App() {
             const thirdPlace = sortedLeaderboard[2];
             const otherRankedPlayers = sortedLeaderboard.slice(3);
 
-            // History drawings for the champion
+            // History drawings for the champion, second, and third place
             const champHistory = (grandChampion && grandChampion.id ? allPlayerHistory[grandChampion.id] : null) 
               || selectedPlayerHistory 
               || results.filter(r => r.submission_id === grandChampion?.id);
+
+            const secondHistory = (secondPlace && secondPlace.id ? allPlayerHistory[secondPlace.id] : null)
+              || results.filter(r => r.submission_id === secondPlace?.id);
+
+            const thirdHistory = (thirdPlace && thirdPlace.id ? allPlayerHistory[thirdPlace.id] : null)
+              || results.filter(r => r.submission_id === thirdPlace?.id);
 
             return (
               <div className="host-grand-champion-screen animate-pop-in">
@@ -1268,31 +1312,9 @@ function App() {
                   </p>
                 </div>
 
-                {/* 3-Column Olympic Podium Layout */}
-                <div className="champion-podium-row">
-                  {/* 2nd Place Runner-Up */}
-                  {secondPlace && (
-                    <div className="glass-panel champion-podium-card champion-card-second animate-slide-up">
-                      <div className="podium-rank-badge silver">🥈 2ND PLACE</div>
-                      <h2 className="podium-player-name">{secondPlace.name}</h2>
-                      <div className="podium-score-wrap">
-                        <span className="podium-score-val">{secondPlace.score}</span>
-                        <span className="podium-score-unit">PTS</span>
-                      </div>
-                      {(() => {
-                        const pHistory = (secondPlace.id ? allPlayerHistory[secondPlace.id] : null) || results.filter(r => r.submission_id === secondPlace.id);
-                        const topItem = pHistory?.[0];
-                        return topItem?.image ? (
-                          <div className="podium-thumb-wrap">
-                            <img src={topItem.image} alt="Runner-up Art" className="podium-thumb-img" />
-                            <span className="podium-thumb-prompt">"{topItem.prompt || 'Best Artwork'}"</span>
-                          </div>
-                        ) : null;
-                      })()}
-                    </div>
-                  )}
-
-                  {/* 1st Place Grand Champion (Center, Elevated & Featured) */}
+                {/* Left-to-Right Hierarchy: 1st Place (Champion) -> 2nd Place -> 3rd Place */}
+                <div className={`champion-podium-row ${!thirdPlace ? 'two-players' : 'three-players'}`}>
+                  {/* 1st Place Grand Champion (Primary Visual Hero on Left) */}
                   {grandChampion && (
                     <div className="glass-panel champion-podium-card champion-card-first animate-pop-in">
                       <div className="podium-crown-badge">👑 1ST PLACE CHAMPION 🏆</div>
@@ -1311,7 +1333,7 @@ function App() {
                             {item.image && (
                               <img src={item.image} alt="Champion Artwork" className="champion-mosaic-img" />
                             )}
-                            <span className="mosaic-prompt-text">"{item.prompt || 'Masterpiece'}"</span>
+                            <span className="mosaic-prompt-text" title={item.prompt}>"{item.prompt || 'Masterpiece'}"</span>
                             <span className="mosaic-score-text">{item.total_score} pts</span>
                           </div>
                         ))}
@@ -1325,25 +1347,57 @@ function App() {
                     </div>
                   )}
 
-                  {/* 3rd Place Runner-Up */}
-                  {thirdPlace && (
-                    <div className="glass-panel champion-podium-card champion-card-third animate-slide-up">
-                      <div className="podium-rank-badge bronze">🥉 3RD PLACE</div>
-                      <h2 className="podium-player-name">{thirdPlace.name}</h2>
+                  {/* 2nd Place Runner-Up (Full Gallery of Designs) */}
+                  {secondPlace && (
+                    <div className="glass-panel champion-podium-card champion-card-second animate-slide-up">
+                      <div className="podium-rank-badge silver">🥈 2ND PLACE RUNNER-UP</div>
+                      <h2 className="podium-player-name">{secondPlace.name}</h2>
                       <div className="podium-score-wrap">
-                        <span className="podium-score-val">{thirdPlace.score}</span>
+                        <span className="podium-score-val silver">{secondPlace.score}</span>
                         <span className="podium-score-unit">PTS</span>
                       </div>
-                      {(() => {
-                        const pHistory = (thirdPlace.id ? allPlayerHistory[thirdPlace.id] : null) || results.filter(r => r.submission_id === thirdPlace.id);
-                        const topItem = pHistory?.[0];
-                        return topItem?.image ? (
-                          <div className="podium-thumb-wrap">
-                            <img src={topItem.image} alt="Bronze Art" className="podium-thumb-img" />
-                            <span className="podium-thumb-prompt">"{topItem.prompt || 'Best Artwork'}"</span>
+
+                      {/* 2nd Place All Designs Showcase */}
+                      <div className="podium-showcase-title silver">🎨 RUNNER-UP MASTERPIECES</div>
+                      <div className="champion-mosaic-gallery">
+                        {(secondHistory && secondHistory.length > 0 ? secondHistory.slice(0, 3) : results.filter(r => r.submission_id === secondPlace.id).slice(0, 1)).map((item: any, idx: number) => (
+                          <div key={idx} className="champion-mosaic-item silver-item">
+                            <span className="mosaic-round-pill silver">Round {item.round || (idx + 1)}</span>
+                            {item.image && (
+                              <img src={item.image} alt="Runner-up Artwork" className="champion-mosaic-img" />
+                            )}
+                            <span className="mosaic-prompt-text" title={item.prompt}>"{item.prompt || 'Artwork'}"</span>
+                            <span className="mosaic-score-text silver">{item.total_score} pts</span>
                           </div>
-                        ) : null;
-                      })()}
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3rd Place Runner-Up (Full Gallery of Designs) */}
+                  {thirdPlace && (
+                    <div className="glass-panel champion-podium-card champion-card-third animate-slide-up">
+                      <div className="podium-rank-badge bronze">🥉 3RD PLACE RUNNER-UP</div>
+                      <h2 className="podium-player-name">{thirdPlace.name}</h2>
+                      <div className="podium-score-wrap">
+                        <span className="podium-score-val bronze">{thirdPlace.score}</span>
+                        <span className="podium-score-unit">PTS</span>
+                      </div>
+
+                      {/* 3rd Place All Designs Showcase */}
+                      <div className="podium-showcase-title bronze">🎨 3RD PLACE MASTERPIECES</div>
+                      <div className="champion-mosaic-gallery">
+                        {(thirdHistory && thirdHistory.length > 0 ? thirdHistory.slice(0, 3) : results.filter(r => r.submission_id === thirdPlace.id).slice(0, 1)).map((item: any, idx: number) => (
+                          <div key={idx} className="champion-mosaic-item bronze-item">
+                            <span className="mosaic-round-pill bronze">Round {item.round || (idx + 1)}</span>
+                            {item.image && (
+                              <img src={item.image} alt="3rd Place Artwork" className="champion-mosaic-img" />
+                            )}
+                            <span className="mosaic-prompt-text" title={item.prompt}>"{item.prompt || 'Artwork'}"</span>
+                            <span className="mosaic-score-text bronze">{item.total_score} pts</span>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1651,13 +1705,21 @@ function App() {
                   const isMe = r.submission_id === playerId;
                   return (
                     <div key={i} className={`glass-panel player-gallery-card ${isMe ? 'my-highlight-card' : ''}`}>
-                      <div className="gallery-card-top">
+                      <div 
+                        className="gallery-card-top" 
+                        style={{ cursor: 'pointer' }} 
+                        onClick={() => openPlayerHistoryGallery({ id: r.submission_id, name: player.name })}
+                        title={`Tap to view all of ${player.name}'s drawings`}
+                      >
                         <span className={`gallery-rank-pill ${i === 0 ? 'winner' : ''}`}>
                           {i === 0 ? '👑 1ST' : i === 1 ? '🥈 2ND' : i === 2 ? '🥉 3RD' : `#${i + 1}`}
                         </span>
                         <h4 className="gallery-player-name">
                           {player.name} {isMe && <span className="you-tag">(You)</span>}
                         </h4>
+                        <span className="view-gallery-pill" style={{ marginLeft: 'auto', marginRight: '6px' }}>
+                          🎨 History ❯
+                        </span>
                         <div className="gallery-score-badge">
                           <span className="score-val">{r.total_score}</span>
                           <span className="score-unit">pts</span>
@@ -1689,7 +1751,7 @@ function App() {
             </div>
           )}
 
-          {/* TAB 3: STANDINGS / LEADERBOARD */}
+          {/* TAB 3: STANDINGS / LEADERBOARD (Click any player to view their drawings) */}
           {playerResultsTab === 'standings' && (
             <div className="player-tab-content animate-slide-up">
               <div className="glass-panel text-center" style={{ padding: '20px 14px' }}>
@@ -1697,13 +1759,21 @@ function App() {
                 <h3 className="title-giant" style={{ fontSize: '1.6rem', marginBottom: '2px' }}>
                   {currentRound >= maxRounds ? 'FINAL STANDINGS' : 'OVERALL STANDINGS'}
                 </h3>
-                <p className="subtitle" style={{ fontSize: '0.85rem', marginBottom: '14px' }}>
+                <p className="subtitle" style={{ fontSize: '0.85rem', marginBottom: '8px' }}>
                   {currentRound >= maxRounds ? 'Total Game Scores' : `Round ${currentRound} of ${maxRounds}`}
                 </p>
+                <div className="standings-tap-hint">
+                  💡 Tap any player to see all their drawings across all rounds!
+                </div>
 
                 <div className="leaderboard-list">
                   {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
-                    <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''} ${p.id === playerId ? 'leaderboard-row-me' : ''}`}>
+                    <div 
+                      key={i} 
+                      className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''} ${p.id === playerId ? 'leaderboard-row-me' : ''}`}
+                      onClick={() => openPlayerHistoryGallery(p)}
+                      title={`Tap to view all of ${p.name}'s designs`}
+                    >
                       <div className="leaderboard-col-player">
                         <div className={`rank-badge rank-badge-${i + 1}`}>
                           {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
@@ -1719,6 +1789,10 @@ function App() {
                             ↑ +{roundDeltas[p.id || '']}
                           </span>
                         )}
+                      </div>
+
+                      <div className="leaderboard-col-action">
+                        <span className="view-gallery-pill">🎨 View Art ❯</span>
                       </div>
 
                       <div className="leaderboard-col-score">
@@ -1754,10 +1828,8 @@ function App() {
               <div className="leaderboard-list">
                 {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
                   <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''}`}
-                    onClick={() => {
-                      setSelectedPlayerName(p.name);
-                      if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
-                    }}
+                    onClick={() => openPlayerHistoryGallery(p)}
+                    title={`Tap to view all of ${p.name}'s drawings`}
                   >
                     <div className="leaderboard-col-player">
                       <div className={`rank-badge rank-badge-${i + 1}`}>
@@ -1774,6 +1846,10 @@ function App() {
                           ↑ +{roundDeltas[p.id || '']}
                         </span>
                       )}
+                    </div>
+
+                    <div className="leaderboard-col-action">
+                      <span className="view-gallery-pill">🎨 View Art ❯</span>
                     </div>
 
                     <div className="leaderboard-col-score">
@@ -1827,14 +1903,15 @@ function App() {
               <p className="subtitle" style={{ fontSize: '0.95rem', marginBottom: '12px' }}>
                 {currentRound >= maxRounds ? "The Ultimate Winner has been crowned!" : `Round ${currentRound} of ${maxRounds}`}
               </p>
+              <div className="standings-tap-hint">
+                💡 Tap any player to see all their drawings across all rounds!
+              </div>
 
               <div className="leaderboard-list">
                 {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
                   <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''}`}
-                    onClick={() => {
-                      setSelectedPlayerName(p.name);
-                      if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
-                    }}
+                    onClick={() => openPlayerHistoryGallery(p)}
+                    title={`Tap to view all of ${p.name}'s drawings`}
                   >
                     <div className="leaderboard-col-player">
                       <div className={`rank-badge rank-badge-${i + 1}`}>
@@ -1851,6 +1928,10 @@ function App() {
                           ↑ +{roundDeltas[p.id || '']}
                         </span>
                       )}
+                    </div>
+
+                    <div className="leaderboard-col-action">
+                      <span className="view-gallery-pill">🎨 View Art ❯</span>
                     </div>
 
                     <div className="leaderboard-col-score">
@@ -1872,66 +1953,101 @@ function App() {
         )
       )}
 
-      {/* History Modal Overlay for manually clicking players or the Grand Recap */}
-      {selectedPlayerHistory && (currentRound < maxRounds || !isHostUser) && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 100, display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto', alignItems: 'center' }}>
-
-          <div className="w-full max-w-5xl flex-row justify-between mb-4 flex-wrap" style={{ gap: '16px' }}>
-            {!isHostUser && currentRound >= maxRounds ? (
-              <button
-                className="btn-primary"
-                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.2rem', flex: 1 }}
-                disabled={isSharing}
-                onClick={() => handleShare('my-grand-recap', `${selectedPlayerName}_Recap`)}
-              >
-                {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
-                {isSharing ? 'Generating Epic Recap...' : 'Share Full Game Recap! 📸'}
-              </button>
-            ) : <div style={{ flex: 1 }} />}
-            <button className="btn-secondary" onClick={() => setSelectedPlayerHistory(null)} style={{ padding: '16px 32px', fontSize: '1.2rem' }}>✕ Close</button>
-          </div>
-
-          <div id={(!isHostUser && currentRound >= maxRounds) ? "my-grand-recap" : undefined} className="animate-pop-in w-full max-w-5xl" style={{ background: (!isHostUser && currentRound >= maxRounds) ? '#0a0d17' : 'transparent', padding: (!isHostUser && currentRound >= maxRounds) ? '32px' : '0', borderRadius: '24px', border: (!isHostUser && currentRound >= maxRounds) ? '4px solid var(--primary)' : 'none' }}>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
-              <div className="flex-col" style={{ alignItems: 'flex-start' }}>
-                <h2 className="title-giant text-primary" style={{ fontSize: '3rem', margin: 0, lineHeight: 1.1 }}>
-                  {(!isHostUser && currentRound >= maxRounds) ? "My Draw Judge Journey" : `${selectedPlayerName}'s History`}
+      {/* History Modal Overlay for inspecting any player's designs or the Grand Recap */}
+      {selectedPlayerHistory && (
+        <div className="player-history-modal-overlay animate-fade-in" onClick={() => setSelectedPlayerHistory(null)}>
+          <div className="player-history-modal-container animate-slide-up" onClick={(e) => e.stopPropagation()}>
+            
+            {/* Header */}
+            <div className="player-history-modal-header">
+              <div className="player-history-title-wrap">
+                <h2 className="player-history-title">
+                  {selectedPlayerName === playerName || (playerId && players.find(p => p.id === playerId)?.name === selectedPlayerName)
+                    ? (currentRound >= maxRounds ? '🏆 My Draw Judge Journey' : '🎨 My Artwork History')
+                    : `🎨 ${selectedPlayerName}'s Masterpieces`}
                 </h2>
-                {(!isHostUser && currentRound >= maxRounds) && (
-                  <div style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', marginTop: '8px', background: 'rgba(255,255,255,0.1)', padding: '8px 16px', borderRadius: '8px' }}>
-                    Player: <span style={{ color: 'white' }}>{selectedPlayerName}</span> • Total Score: <span className="text-primary">{players.find(p => p.name === selectedPlayerName)?.score || 0} pts</span>
-                  </div>
+                <p className="player-history-subtitle">
+                  Total Score: <strong style={{ color: '#fbbf24' }}>{players.find(p => p.name === selectedPlayerName)?.score ?? 0} pts</strong> • {selectedPlayerHistory.length} round{selectedPlayerHistory.length === 1 ? '' : 's'} recorded
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {(!isHostUser && currentRound >= maxRounds && (selectedPlayerName === playerName || (playerId && players.find(p => p.id === playerId)?.name === selectedPlayerName))) && (
+                  <button
+                    className="btn-primary"
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '10px 16px', fontSize: '0.9rem' }}
+                    disabled={isSharing}
+                    onClick={() => handleShare('player-history-card-grid', `${selectedPlayerName}_Recap`)}
+                  >
+                    {isSharing ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+                    <span>{isSharing ? 'Saving...' : 'Share Recap 📸'}</span>
+                  </button>
                 )}
+                <button 
+                  className="btn-secondary player-history-close-btn" 
+                  onClick={() => setSelectedPlayerHistory(null)}
+                >
+                  ✕ Close
+                </button>
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '24px' }}>
-              {selectedPlayerHistory.map((item, idx) => (
-                <div key={idx} className="glass-panel flex-col text-left" style={{ padding: '24px', background: 'rgba(25,30,50,0.8)' }}>
-                  <h4 style={{ fontSize: '1.3rem', marginBottom: '12px', color: 'white' }}>Round {item.round}: {item.prompt}</h4>
-                  {item.image && <img src={item.image} alt="Drawing" style={{ width: '100%', aspectRatio: '3/4', objectFit: 'contain', background: 'black', borderRadius: '16px', border: '2px solid hsla(0,0%,100%,0.1)', marginBottom: '16px', alignSelf: 'center' }} />}
-                  <h4 className="text-primary" style={{ fontSize: '1.8rem', fontWeight: 900, marginBottom: '12px' }}>{item.total_score} pts</h4>
-
-                  {item.scores && (
-                    <div className="flex-row" style={{ gap: '8px', fontSize: '0.85rem', marginBottom: '16px', flexWrap: 'wrap' }}>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '6px' }}>Rel: {item.scores.prompt_relevance}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '6px' }}>Cre: {item.scores.creativity}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '6px' }}>Cla: {item.scores.clarity}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '6px' }}>Fun: {item.scores.entertainment}</span>
-                    </div>
-                  )}
-
-                  <div style={{ fontStyle: 'italic', fontSize: '1.1rem', background: 'rgba(0,0,0,0.5)', padding: '16px', borderRadius: '12px', color: 'hsla(0,0%,100%,0.9)' }}>"{item.comment}"</div>
+            {/* Cards Grid */}
+            <div id="player-history-card-grid" className="player-history-cards-grid">
+              {selectedPlayerHistory.length === 0 ? (
+                <div className="glass-panel text-center" style={{ padding: '32px', gridColumn: '1 / -1' }}>
+                  <p className="subtitle">No artwork submitted yet for this player.</p>
                 </div>
-              ))}
+              ) : (
+                selectedPlayerHistory.map((item, idx) => (
+                  <div key={idx} className="player-history-round-card">
+                    <div className="player-history-round-card-top">
+                      <span className="player-history-round-pill">
+                        Round {item.round || (idx + 1)}
+                      </span>
+                      <span className="player-history-score-pill">
+                        {item.total_score} PTS
+                      </span>
+                    </div>
+
+                    <p className="player-history-prompt-text" title={item.prompt}>
+                      "{item.prompt || 'Artwork'}"
+                    </p>
+
+                    {item.image && (
+                      <div className="player-history-img-frame">
+                        <img src={item.image} alt={`Round ${item.round || (idx + 1)} artwork`} className="player-history-img" />
+                      </div>
+                    )}
+
+                    {item.scores && (
+                      <div className="player-metrics-grid mini">
+                        <div className="metric-chip">Rel: <strong>{item.scores.prompt_relevance}</strong></div>
+                        <div className="metric-chip">Cre: <strong>{item.scores.creativity}</strong></div>
+                        <div className="metric-chip">Cla: <strong>{item.scores.clarity}</strong></div>
+                        <div className="metric-chip">Fun: <strong>{item.scores.entertainment}</strong></div>
+                      </div>
+                    )}
+
+                    {item.comment && (
+                      <div className="player-history-comment-box">
+                        "{item.comment}"
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
 
-            {(!isHostUser && currentRound >= maxRounds) && (
-              <div style={{ marginTop: '32px', textAlign: 'center', color: 'hsla(0,0%,100%,0.4)', fontSize: '1rem', fontWeight: 900, letterSpacing: '4px', textTransform: 'uppercase' }}>
-                DRAW JUDGE 🤖🎨
-              </div>
-            )}
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <button 
+                className="btn-secondary" 
+                style={{ minWidth: '180px', margin: '0 auto', display: 'inline-block' }}
+                onClick={() => setSelectedPlayerHistory(null)}
+              >
+                ✕ Close Gallery
+              </button>
+            </div>
           </div>
         </div>
       )}
