@@ -130,6 +130,11 @@ if os.path.exists(drawjudge_dist):
 if os.path.exists(coupleclash_dist):
     app.mount("/coupleclash/assets", StaticFiles(directory=os.path.join(coupleclash_dist, "assets")), name="coupleclash_assets")
 
+def is_static_asset(path: str) -> bool:
+    """Returns True if path represents a static file with an extension or within an assets folder."""
+    _, ext = os.path.splitext(path)
+    return bool(ext) or "/assets/" in path or path.startswith("assets/")
+
 @app.get("/{full_path:path}")
 async def serve_frontend(request: Request, full_path: str):
     # CRITICAL: If this is an API request, DO NOT return HTML
@@ -148,6 +153,8 @@ async def serve_frontend(request: Request, full_path: str):
         
         if sub_path and os.path.isfile(target_path):
             return FileResponse(target_path)
+        if sub_path and is_static_asset(sub_path):
+            raise HTTPException(status_code=404, detail=f"Asset '{sub_path}' not found.")
         # Fallback to index.html for SPA routing
         return FileResponse(os.path.join(drawjudge_dist, "index.html"))
 
@@ -163,6 +170,8 @@ async def serve_frontend(request: Request, full_path: str):
         
         if sub_path and os.path.isfile(target_path):
             return FileResponse(target_path)
+        if sub_path and is_static_asset(sub_path):
+            raise HTTPException(status_code=404, detail=f"Asset '{sub_path}' not found.")
         # Fallback to index.html for SPA routing
         return FileResponse(os.path.join(coupleclash_dist, "index.html"))
 
@@ -171,6 +180,8 @@ async def serve_frontend(request: Request, full_path: str):
         target_path = os.path.join(launcher_dist, full_path)
         if full_path and os.path.isfile(target_path):
             return FileResponse(target_path)
+        if full_path and is_static_asset(full_path):
+            raise HTTPException(status_code=404, detail=f"Asset '{full_path}' not found.")
         # Fallback to index.html for SPA routing
         return FileResponse(os.path.join(launcher_dist, "index.html"))
 

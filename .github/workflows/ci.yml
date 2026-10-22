@@ -7,53 +7,66 @@ on:
     branches: [ "main" ]
 
 jobs:
-  # 1. Frontend Checks
-  build-frontend:
-    name: Build & Lint Frontend
+  # 1. Frontends Build Checks
+  build-frontends:
+    name: Build & Verify Frontends
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend
     
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
     - name: Use Node.js 20
       uses: actions/setup-node@v4
       with:
         node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
-        
-    - name: Install Dependencies
-      run: npm install
-      
-    - name: Run Linter
-      run: npm run lint
-      
-    - name: Build React App
-      run: npm run build
+
+    - name: Build DrawJudge Frontend
+      run: |
+        cd Games/DrawJudge
+        npm install
+        npm run build
+
+    - name: Build CoupleClash Frontend
+      run: |
+        cd Games/CoupleClash
+        npm install
+        npm run build
+
+    - name: Build Launcher Frontend
+      run: |
+        cd Games/Launcher
+        npm install
+        npm run build
+
+    - name: Verify Distribution Directories
+      run: |
+        test -f Games/DrawJudge/dist/index.html || { echo "DrawJudge build missing"; exit 1; }
+        test -f Games/CoupleClash/dist/index.html || { echo "CoupleClash build missing"; exit 1; }
+        test -f Games/Launcher/dist/index.html || { echo "Launcher build missing"; exit 1; }
+        echo "All game builds verified successfully!"
 
   # 2. Backend Checks
   check-backend:
     name: Install & Verify Backend
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./backend
         
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
     - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
+        cache-dependency-path: 'Server/requirements.txt'
         
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r Server/requirements.txt
         
     - name: Check Python Syntax
       run: |
-        python -m compileall .
+        python -m compileall Server

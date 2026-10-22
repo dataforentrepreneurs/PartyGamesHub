@@ -891,9 +891,9 @@ function App() {
             </div>
           </div>
 
-          <div className="text-center mb-6">
-            <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '350px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 20px hsla(45, 100%, 50%, 0.3))' }} />
-            <p className="subtitle mt-4">Draw. Submit. Let AI decide.</p>
+          <div className="text-center mb-3">
+            <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '240px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 16px hsla(45, 100%, 50%, 0.25))' }} />
+            <p className="subtitle mt-2">Draw. Submit. Let AI decide.</p>
           </div>
 
           {/* Host Fallback Recovery Card */}
@@ -917,10 +917,10 @@ function App() {
             </div>
           )}
 
-          <div className="glass-panel flex-col">
-            <button className="btn-primary" onClick={handleCreateRoom}><Play size={24} /> Create Game</button>
-            <button className="btn-secondary" onClick={() => setView('join')}><Users size={24} /> Join Room</button>
-            <button className="btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', marginTop: '8px' }}>
+          <div className="glass-panel flex-col" style={{ maxWidth: '420px', width: '100%', margin: '0 auto' }}>
+            <button className="btn-primary" onClick={handleCreateRoom}><Play size={20} /> Create Game</button>
+            <button className="btn-secondary" onClick={() => setView('join')}><Users size={20} /> Join Room</button>
+            <button className="btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', marginTop: '4px' }}>
               ❓ How to Play
             </button>
             {isDebugMode && (
@@ -992,27 +992,27 @@ function App() {
           </div>
 
           {/* Settings Sidebar */}
-          <div className="dashboard-sidebar" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '24px' }}>
-            <div className="flex-col" style={{ gap: '28px' }}>
-              <h3 style={{ fontSize: '1.6rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '8px' }}>GAME SETTINGS</h3>
+          <div className="dashboard-sidebar" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '16px' }}>
+            <div className="flex-col" style={{ gap: '14px' }}>
+              <h3 style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '4px' }}>GAME SETTINGS</h3>
               
-              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
-                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>GAME MODE</label>
-                <select className="input-field" value={hostSelectedMode} onChange={e => setHostSelectedMode(e.target.value)} style={{ fontSize: '0.95rem', padding: '10px' }}>
+              <div className="flex-col" style={{ gap: '6px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>GAME MODE</label>
+                <select className="input-field" value={hostSelectedMode} onChange={e => setHostSelectedMode(e.target.value)} style={{ fontSize: '0.9rem', padding: '8px 12px' }}>
                   <option value="classic">🏆 Classic Mode (60s)</option>
                   <option value="speed">⚡ Speed Sketch (15s)</option>
                   <option value="blind">🙈 Blind Draw (3s Prompt)</option>
                 </select>
               </div>
 
-              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
-                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>TOTAL ROUNDS</label>
+              <div className="flex-col" style={{ gap: '6px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>TOTAL ROUNDS</label>
                 <div style={{ display: 'flex', gap: '6px' }}>
                   {[3, 5, 10, 15].map(r => (
                     <button
                       key={r}
                       className={maxRounds === r ? 'btn-primary' : 'btn-secondary'}
-                      style={{ flex: 1, padding: '10px 0', fontSize: '1rem', margin: 0 }}
+                      style={{ flex: 1, padding: '8px 0', fontSize: '0.95rem', margin: 0 }}
                       onClick={() => {
                         if (ws.current) ws.current.send(JSON.stringify({ event: 'update_settings', max_rounds: r }));
                       }}
@@ -1023,15 +1023,15 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex-col" style={{ gap: '8px', textAlign: 'left' }}>
-                <label style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>THEME / PROMPT DECK</label>
+              <div className="flex-col" style={{ gap: '6px', textAlign: 'left' }}>
+                <label style={{ fontSize: '0.8rem', color: 'hsla(0,0%,100%,0.7)', fontWeight: 'bold' }}>THEME / PROMPT DECK</label>
                 <select className="input-field" value={theme} onChange={e => {
                   const val = e.target.value;
                   setTheme(val);
                   if (ws.current) {
                     ws.current.send(JSON.stringify({ event: 'update_settings', theme: val }));
                   }
-                }} style={{ fontSize: '0.95rem', padding: '10px' }}>
+                }} style={{ fontSize: '0.9rem', padding: '8px 12px' }}>
                   <option value="Family">🏡 Family Friendly</option>
                   <option value="Kids">🧸 Kids & Silly</option>
                   <option value="Couples">💔 Couples Arguments</option>
@@ -1040,16 +1040,16 @@ function App() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: '12px', marginTop: '20px' }}>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '16px' }}>
               <button 
                 className="btn-secondary" 
                 onClick={() => setShowExitConfirm(true)} 
-                style={{ padding: '16px', fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{ padding: '10px 16px', fontSize: '0.95rem', display: 'flex', alignItems: 'center', gap: '6px', width: 'auto' }}
                 title="Exit Game Room"
               >
-                <LogOut size={20} /> Exit
+                <LogOut size={18} /> Exit
               </button>
-              <button className="btn-primary" onClick={handleStartGame} style={{ flex: 1, padding: '16px' }}>Start Round</button>
+              <button className="btn-primary" onClick={handleStartGame} style={{ flex: 1, padding: '10px 16px', fontSize: '1rem' }}>Start Round</button>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ services:
     env: python
     plan: free
     buildCommand: |
+      set -e
       # 1. Install python dependencies
       pip install -r Server/requirements.txt
       
@@ -23,9 +24,12 @@ services:
         (cd Games/Launcher && npm install && npm run build)
       fi
       
-      # 4. Verify builds
+      # 5. Strictly verify builds exist
       echo "VERIFYING BUILDS:"
-      ls -d Games/*/dist || echo "No dist folders found!"
+      test -f Games/DrawJudge/dist/index.html || { echo "ERROR: DrawJudge dist missing!"; exit 1; }
+      test -f Games/CoupleClash/dist/index.html || { echo "ERROR: CoupleClash dist missing!"; exit 1; }
+      test -f Games/Launcher/dist/index.html || { echo "ERROR: Launcher dist missing!"; exit 1; }
+      echo "All frontend builds verified successfully!"
     startCommand: |
       cd Server
       python -m uvicorn main:app --host 0.0.0.0 --port $PORT

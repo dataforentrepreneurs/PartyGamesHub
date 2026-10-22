@@ -792,30 +792,30 @@ function App() {
           </div>
         )}
 
-        <div className="glass-panel" style={{ maxWidth: '480px', width: '100%', padding: '2.5rem' }}>
+        <div className="glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '1.5rem 1.25rem' }}>
           <input
             className="subtitle"
-            style={{ width: '100%', padding: '1.2rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '1.2rem', marginBottom: '1.2rem' }}
+            style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '1.05rem', marginBottom: '0.85rem' }}
             placeholder="Your Name"
             value={playerName}
             onChange={e => setPlayerName(e.target.value)}
           />
           {!isInviteLink && (
-            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '1.2rem', padding: '1.2rem', fontSize: '1.25rem' }} onClick={handleCreateRoom}>
-              <Play size={22} /> Create Room
+            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '0.85rem', padding: '0.85rem 1.25rem', fontSize: '1.05rem' }} onClick={handleCreateRoom}>
+              <Play size={20} /> Create Room
             </button>
           )}
-          <div className="input-group" style={{ marginBottom: '1.2rem', gap: '12px' }}>
+          <div className="input-group" style={{ marginBottom: '0.85rem', gap: '10px' }}>
             <input
               className="subtitle"
-              style={{ flex: 1, padding: '1.2rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', margin: 0, fontSize: '1.2rem' }}
+              style={{ flex: 1, padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', margin: 0, fontSize: '1.05rem' }}
               placeholder="Room Code"
               value={roomCode}
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
             />
-            <button className="btn btn-secondary" style={{ padding: '1.2rem 2rem', fontSize: '1.2rem' }} onClick={handleJoinRoom}>Join</button>
+            <button className="btn btn-secondary" style={{ padding: '0.85rem 1.5rem', fontSize: '1.05rem' }} onClick={handleJoinRoom}>Join</button>
           </div>
-          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '8px', padding: '1.2rem', fontSize: '1.2rem' }}>
+          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '4px', padding: '0.85rem 1.25rem', fontSize: '1.05rem' }}>
             ❓ How to Play
           </button>
         </div>
@@ -1114,15 +1114,64 @@ function App() {
       <div className="glass-panel clue-banner">
         {gameState?.turn_phase === 'WAITING_FOR_CLUE' ? (
           <div>
-            <h2 className="subtitle">Waiting for Captain to give a clue...</h2>
-            {isMyTurn && isCaptain && (
-              <div className="input-group-row" style={{ justifyContent: 'center' }}>
-                <input id="clue-word" className="subtitle" style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', margin: 0 }} placeholder="One word clue" />
-                <input id="clue-num" type="number" className="subtitle" style={{ width: '80px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '1rem', color: 'white', margin: 0 }} defaultValue={1} />
-                <button className="btn btn-primary" onClick={() => handleSubmitClue(
-                  (document.getElementById('clue-word') as HTMLInputElement).value,
-                  parseInt((document.getElementById('clue-num') as HTMLInputElement).value)
-                )}>Send</button>
+            {isMyTurn && isCaptain ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>🎯</span>
+                  <h2 style={{ fontSize: '1.15rem', fontWeight: 800, color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Your Turn, Captain!
+                  </h2>
+                </div>
+                <p style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)', margin: '0 0 10px 0' }}>
+                  Enter a 1-word clue and select how many tiles it connects to:
+                </p>
+                <div className="captain-clue-form">
+                  <div className="clue-word-field">
+                    <input 
+                      id="clue-word" 
+                      type="text" 
+                      placeholder="One-word clue (e.g. Ocean)..." 
+                      autoFocus
+                    />
+                  </div>
+                  <div className="clue-num-field">
+                    <label htmlFor="clue-num">Tiles:</label>
+                    <select id="clue-num" defaultValue="1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => (
+                        <option key={n} value={n}>{n} {n === 1 ? 'tile' : 'tiles'}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <button 
+                    className="btn btn-primary clue-submit-btn" 
+                    onClick={() => {
+                      const wordInput = document.getElementById('clue-word') as HTMLInputElement;
+                      const numSelect = document.getElementById('clue-num') as HTMLSelectElement;
+                      const word = wordInput?.value?.trim();
+                      const num = parseInt(numSelect?.value || '1', 10);
+                      if (!word) {
+                        alert('Please enter a one-word clue!');
+                        wordInput?.focus();
+                        return;
+                      }
+                      handleSubmitClue(word, isNaN(num) ? 1 : num);
+                    }}
+                  >
+                    Send Clue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '0.25rem 0' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '4px' }}>
+                  <span style={{ fontSize: '1.2rem' }}>⏳</span>
+                  <h2 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: gameState?.current_turn === 'blue' ? 'var(--blue-team)' : 'var(--pink-team)' }}>
+                    Waiting for {gameState?.current_turn === 'blue' ? 'Blue' : 'Pink'} Captain...
+                  </h2>
+                </div>
+                <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.65)', margin: 0 }}>
+                  The Captain is choosing a 1-word clue and the number of matching cards.
+                </p>
               </div>
             )}
           </div>

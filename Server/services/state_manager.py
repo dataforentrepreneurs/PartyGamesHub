@@ -187,6 +187,8 @@ def save_room_state(room: RoomState):
             if images:
                 redis_client.hset(f"{redis_prefix}:images", mapping=images)
                 redis_client.expire(f"{redis_prefix}:images", 3600)
+            else:
+                redis_client.delete(f"{redis_prefix}:images")
         except Exception as e:
             print(f"Redis Save Error: {e}")
 
