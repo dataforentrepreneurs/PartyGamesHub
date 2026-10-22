@@ -749,7 +749,6 @@ function App() {
         <button 
           onClick={() => window.location.href = '/'}
           className="hub-btn"
-          title="Back to Hub"
           aria-label="Back to Hub"
         >
           <Home size={20} />
@@ -876,7 +875,6 @@ function App() {
             <button 
               onClick={() => window.location.href = '/'}
               className="top-bar-btn icon-only"
-              title="Back to Hub"
               aria-label="Back to Hub"
             >
               <Home size={20} />
@@ -1136,7 +1134,7 @@ function App() {
         <div className="flex-col w-full text-center animate-pop-in" style={{ margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
           <div className="text-center mb-2 pt-2" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
             <h2 className="title-giant" style={{ fontSize: '2rem', letterSpacing: '2px', margin: 0 }}>
-              <Crown size={28} className="text-primary inline mr-2" style={{ verticalAlign: 'middle', animation: 'pulse-glow 2s infinite' }} />
+              <Crown size={28} className="text-primary inline mr-2" style={{ verticalAlign: 'middle' }} />
               ROUND WINNER
             </h2>
             {roundSummary && (
@@ -1270,7 +1268,7 @@ function App() {
                 return (
                   <button
                     className="btn-primary w-full mt-2 mb-4"
-                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', animation: isSharing ? 'none' : 'pulse-glow 2s infinite', opacity: isSharing ? 0.7 : 1 }}
+                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: isSharing ? 0.7 : 1 }}
                     disabled={isSharing}
                     onClick={() => handleShare('my-share-card', 'MyDrawing')}
                   >
@@ -1343,7 +1341,7 @@ function App() {
                     onMouseLeave={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.05)'}
                   >
                     {currentRound >= maxRounds && i === 0 && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)', animation: 'pulse-glow 2s infinite' }} />
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)' }} />
                     )}
 
                     <span style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'white', zIndex: 1 }}>
@@ -1411,7 +1409,7 @@ function App() {
                   onMouseLeave={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.05)'}
                 >
                   {currentRound >= maxRounds && i === 0 && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)', animation: 'pulse-glow 2s infinite' }} />
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)' }} />
                   )}
 
                   <span style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'white', zIndex: 1 }}>
@@ -1468,7 +1466,7 @@ function App() {
             {!isHostUser && currentRound >= maxRounds ? (
               <button
                 className="btn-primary"
-                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.2rem', flex: 1, animation: isSharing ? 'none' : 'pulse-glow 2s infinite' }}
+                style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', padding: '16px 24px', fontSize: '1.2rem', flex: 1 }}
                 disabled={isSharing}
                 onClick={() => handleShare('my-grand-recap', `${selectedPlayerName}_Recap`)}
               >
@@ -1534,7 +1532,6 @@ function App() {
           setShowFeedbackModal(true);
         }}
         className="in-game-floating-feedback-btn"
-        title="Give Feedback"
         aria-label="Give Feedback"
       >
         <MessageSquare size={20} />

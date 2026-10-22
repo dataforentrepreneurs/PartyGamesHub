@@ -300,8 +300,7 @@ function App() {
 
       {/* Floating Feedback Trigger Button */}
       <button 
-        className="feedback-trigger-btn icon-btn-tooltip"
-        data-tooltip="Feedback"
+        className="feedback-trigger-btn"
         onClick={() => {
           setSubmitSuccess(false);
           setRating(null);
@@ -311,7 +310,6 @@ function App() {
         }}
         tabIndex={0}
         aria-label="Give Feedback"
-        title="Feedback"
       >
         💬
       </button>

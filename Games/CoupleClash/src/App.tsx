@@ -530,7 +530,6 @@ function App() {
           setShowFeedbackModal(true);
         }}
         className="in-game-floating-feedback-btn"
-        title="Give Feedback"
         aria-label="Give Feedback"
       >
         <MessageSquare size={20} />
@@ -761,7 +760,6 @@ function App() {
           <button 
             onClick={() => window.location.href = '/'}
             className="top-bar-btn icon-only"
-            title="Back to Hub"
             aria-label="Back to Hub"
           >
             <Home size={20} />
@@ -843,114 +841,7 @@ function App() {
           </div>
         )}
 
-        {/* Feedback Modal Overlay */}
-        {showFeedbackModal && (
-          <div className="feedback-modal-overlay" onClick={() => setShowFeedbackModal(false)}>
-            <div className="feedback-modal-content" onClick={(e) => e.stopPropagation()}>
-              {!submitSuccess ? (
-                <>
-                  <h2>Submit Feedback</h2>
-                  <p className="subtitle">Tell us what you think or report an issue!</p>
-                  
-                  <div className="feedback-form-group">
-                    <label htmlFor="feedback-type">Category</label>
-                    <select 
-                      id="feedback-type"
-                      className="feedback-select" 
-                      value={feedbackType} 
-                      onChange={(e) => setFeedbackType(e.target.value)}
-                    >
-                      <option value="general">💬 General Feedback</option>
-                      <option value="bug">🐛 Bug Report</option>
-                      <option value="feature">💡 Feature Suggestion</option>
-                      <option value="love_it">❤️ Love the Game</option>
-                    </select>
-                  </div>
-
-                  <div className="feedback-form-group">
-                    <label>How would you rate your experience?</label>
-                    <div className="rating-emojis">
-                      {[
-                        { val: 1, char: '😠', label: 'Angry' },
-                        { val: 2, char: '🙁', label: 'Sad' },
-                        { val: 3, char: '😐', label: 'Neutral' },
-                        { val: 4, char: '🙂', label: 'Happy' },
-                        { val: 5, char: '😀', label: 'Excited' }
-                      ].map((item) => (
-                        <button
-                          key={item.val}
-                          type="button"
-                          className={`rating-emoji-btn ${rating === item.val ? 'active' : ''}`}
-                          onClick={() => setRating(item.val)}
-                          title={item.label}
-                        >
-                          {item.char}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="feedback-form-group">
-                    <label htmlFor="feedback-comment">Comments</label>
-                    <textarea 
-                      id="feedback-comment"
-                      className="feedback-textarea" 
-                      placeholder="Tell us more about your experience..." 
-                      value={comment}
-                      onChange={(e) => setComment(e.target.value)}
-                    />
-                  </div>
-
-                  <div className="modal-actions">
-                    <button 
-                      className="btn-cancel" 
-                      onClick={() => setShowFeedbackModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      className="btn-submit" 
-                      onClick={handleSubmitFeedback}
-                      disabled={!rating || !comment.trim() || isSubmitting}
-                    >
-                      {isSubmitting ? 'Sending...' : 'Submit'}
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="feedback-success-state">
-                  <span className="success-icon">🚀</span>
-                  <h2>Thank you!</h2>
-                  <p style={{ margin: '1rem 0 2rem 0', opacity: 0.8, textAlign: 'center' }}>
-                    Your feedback helps us make CodePic even better.
-                  </p>
-                  <button 
-                    className="btn-submit" 
-                    style={{ width: '100%', padding: '0.8rem' }}
-                    onClick={() => setShowFeedbackModal(false)}
-                  >
-                    Close
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-        {/* Floating Feedback Trigger Button (Bottom Right) */}
-        <button 
-          onClick={() => {
-            setSubmitSuccess(false);
-            setRating(null);
-            setComment('');
-            setFeedbackType('general');
-            setShowFeedbackModal(true);
-          }}
-          className="in-game-floating-feedback-btn"
-          title="Give Feedback"
-          aria-label="Give Feedback"
-        >
-          <MessageSquare size={20} />
-        </button>
+        {renderFeedbackAndExitModals()}
       </div>
     );
   }
@@ -962,7 +853,6 @@ function App() {
           <button 
             onClick={() => window.location.href = '/'}
             className="hub-btn"
-            title="Back to Hub"
             aria-label="Back to Hub"
           >
             <Home size={20} />
@@ -1124,7 +1014,6 @@ function App() {
           <button 
             onClick={() => window.location.href = '/'}
             className="hub-btn"
-            title="Back to Hub"
             aria-label="Back to Hub"
           >
             <Home size={20} />
@@ -1171,7 +1060,6 @@ function App() {
         <button 
           onClick={() => window.location.href = '/'}
           className="hub-btn"
-          title="Back to Hub"
           aria-label="Back to Hub"
         >
           <Home size={20} />
