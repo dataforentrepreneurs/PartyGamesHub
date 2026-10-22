@@ -869,9 +869,9 @@ function App() {
       )}
 
       {view === 'landing' && (
-        <div className="flex-col">
+        <div className="landing-container">
           {/* Top Bar with Hub and Sound Toggle */}
-          <div className="game-top-bar">
+          <div className="game-top-bar" style={{ width: '100%', marginBottom: '8px' }}>
             <button 
               onClick={() => window.location.href = '/'}
               className="top-bar-btn icon-only"
@@ -891,9 +891,9 @@ function App() {
             </div>
           </div>
 
-          <div className="text-center mb-3">
-            <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '240px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 16px hsla(45, 100%, 50%, 0.25))' }} />
-            <p className="subtitle mt-2">Draw. Submit. Let AI decide.</p>
+          <div className="text-center mb-2">
+            <img src={mainLogo} alt="Draw Judge Logo" onClick={handleLogoTap} style={{ width: '100%', maxWidth: '220px', height: 'auto', margin: '0 auto', display: 'block', filter: 'drop-shadow(0 0 16px hsla(45, 100%, 50%, 0.25))' }} />
+            <p className="subtitle mt-1" style={{ marginBottom: '12px' }}>Draw. Submit. Let AI decide.</p>
           </div>
 
           {/* Host Fallback Recovery Card */}
@@ -903,7 +903,7 @@ function App() {
                 <span className="host-recovery-icon">👑</span>
                 <div>
                   <div className="host-recovery-title">Active Host Session Found</div>
-                  <div className="host-recovery-desc">Room Code: <strong style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>{savedHostSession.roomCode}</strong></div>
+                  <div className="host-recovery-desc">Room Code: <strong style={{ color: 'var(--primary)', fontSize: '1.05rem' }}>{savedHostSession.roomCode}</strong></div>
                 </div>
               </div>
               <div className="host-recovery-actions">
@@ -926,7 +926,7 @@ function App() {
             {isDebugMode && (
               <button
                 onClick={testConnection}
-                style={{ marginTop: '20px', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
+                style={{ marginTop: '16px', background: 'transparent', color: 'rgba(255,255,255,0.5)', border: 'none', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.85rem' }}
               >
                 {isTesting ? 'Testing...' : 'Debug: Test Connection to PC'}
               </button>
@@ -936,19 +936,21 @@ function App() {
       )}
 
       {view === 'join' && (
-        <div className="glass-panel flex-col">
-          <div className="flex-row" style={{ width: '100%', justifyContent: 'space-between', marginBottom: '16px' }}>
-            {!isInviteLink ? (
-              <button className="btn-secondary" style={{ width: 'auto', padding: '8px 12px' }} onClick={() => setView('landing')}><ArrowLeft size={20} /> Back</button>
-            ) : <div />}
-            <button onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', padding: '8px 12px', cursor: 'pointer', fontWeight: 'bold' }}>
-              ❓ How to Play
-            </button>
+        <div className="landing-container">
+          <div className="glass-panel flex-col" style={{ width: '100%', maxWidth: '420px' }}>
+            <div className="flex-row" style={{ width: '100%', justifyContent: 'space-between', marginBottom: '12px' }}>
+              {!isInviteLink ? (
+                <button className="btn-secondary" style={{ width: 'auto', padding: '6px 12px', fontSize: '0.9rem' }} onClick={() => setView('landing')}><ArrowLeft size={18} /> Back</button>
+              ) : <div />}
+              <button onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', color: 'white', borderRadius: '8px', padding: '6px 12px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                ❓ How to Play
+              </button>
+            </div>
+            <h2 className="title-giant" style={{ fontSize: '2.4rem', marginBottom: '8px' }}>JOIN</h2>
+            <input type="text" className="input-field mb-3" placeholder="ROOM CODE" maxLength={6} value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase())} />
+            <input type="text" className="input-field mb-4" placeholder="YOUR NAME" maxLength={12} value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
+            <button className="btn-primary" onClick={submitJoin} disabled={!roomCode || !playerName}>Enter Lobby</button>
           </div>
-          <h2 className="title-giant" style={{ fontSize: '3rem' }}>JOIN</h2>
-          <input type="text" className="input-field mb-4" placeholder="ROOM CODE" maxLength={6} value={roomCode} onChange={(e) => setRoomCode(e.target.value.toUpperCase())} />
-          <input type="text" className="input-field mb-8" placeholder="YOUR NAME" maxLength={12} value={playerName} onChange={(e) => setPlayerName(e.target.value)} />
-          <button className="btn-primary" onClick={submitJoin} disabled={!roomCode || !playerName}>Enter Lobby</button>
         </div>
       )}
 

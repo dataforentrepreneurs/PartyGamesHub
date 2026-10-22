@@ -754,9 +754,9 @@ function App() {
   // --- Render Helpers ---
   if (view === 'landing') {
     return (
-      <div className="app-container">
+      <div className="landing-container">
         {/* Top Navigation Bar */}
-        <div className="game-top-bar">
+        <div className="game-top-bar" style={{ width: '100%', marginBottom: '8px' }}>
           <button 
             onClick={() => window.location.href = '/'}
             className="top-bar-btn icon-only"
@@ -766,9 +766,9 @@ function App() {
           </button>
         </div>
 
-        <div>
-          <h1 className="title-giant">CodePic</h1>
-          <p className="subtitle">Picture Wars: Blue vs Pink</p>
+        <div className="text-center mb-2">
+          <h1 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '4px' }}>CodePic</h1>
+          <p className="subtitle" style={{ marginBottom: '12px', fontSize: '1rem' }}>Picture Wars: Blue vs Pink</p>
         </div>
 
         {/* Host Recovery Banner */}
@@ -778,7 +778,7 @@ function App() {
               <span className="host-recovery-icon">👑</span>
               <div>
                 <div className="host-recovery-title">Active Host Session Found</div>
-                <div className="host-recovery-desc">Room Code: <strong style={{ color: '#ffd700', fontSize: '1.1rem' }}>{savedHostSession.roomCode}</strong></div>
+                <div className="host-recovery-desc">Room Code: <strong style={{ color: '#ffd700', fontSize: '1.05rem' }}>{savedHostSession.roomCode}</strong></div>
               </div>
             </div>
             <div className="host-recovery-actions">
@@ -1055,7 +1055,7 @@ function App() {
   const isHostRole = isHostUser;
 
   return (
-    <div className={`app-container ${isHostUser ? 'host-view' : ''}`}>
+    <div className={`app-container ${isHostUser ? 'host-view' : 'player-game-view'}`}>
       {isHostUser && (
         <button 
           onClick={() => window.location.href = '/'}

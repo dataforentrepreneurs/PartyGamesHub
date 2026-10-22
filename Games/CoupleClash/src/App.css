@@ -689,49 +689,50 @@ html.host-mode #root {
 /* --- Host Session Recovery Card --- */
 .host-recovery-banner {
   background: linear-gradient(135deg, rgba(79, 128, 255, 0.2) 0%, rgba(255, 75, 130, 0.2) 100%);
-  border: 2px solid var(--blue-team);
-  border-radius: 16px;
-  padding: 16px 20px;
-  margin-bottom: 20px;
+  border: 1.5px solid var(--blue-team);
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin: 0 auto 12px auto;
   width: 100%;
-  max-width: 480px;
-  box-shadow: 0 0 25px rgba(79, 128, 255, 0.35);
+  max-width: 420px;
+  box-shadow: 0 0 16px rgba(79, 128, 255, 0.25);
+  box-sizing: border-box;
 }
 
 .host-recovery-content {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 8px;
   text-align: left;
 }
 
 .host-recovery-icon {
-  font-size: 2.2rem;
-  filter: drop-shadow(0 0 8px rgba(79, 128, 255, 0.5));
+  font-size: 1.4rem;
+  filter: drop-shadow(0 0 6px rgba(79, 128, 255, 0.5));
 }
 
 .host-recovery-title {
   font-weight: 800;
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   color: #ffd700;
   line-height: 1.2;
 }
 
 .host-recovery-desc {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   opacity: 0.85;
 }
 
 .host-recovery-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .host-recovery-actions button {
   flex: 1;
-  padding: 10px;
-  font-size: 0.95rem;
+  padding: 8px 12px;
+  font-size: 0.85rem;
   font-weight: 700;
 }
 
@@ -1026,4 +1027,137 @@ html.host-mode #root {
   border-radius: 10px !important;
   margin: 0 !important;
 }
+
+/* Landing Container */
+.landing-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 440px;
+  min-height: calc(100dvh - 32px);
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: 8px 12px;
+}
+
+@media (max-width: 768px) {
+  .landing-container {
+    min-height: 100dvh;
+    padding: 12px;
+  }
+}
+
+/* Dedicated Mobile Player/Captain Game View (Zero-Scroll Fullscreen Layout) */
+.player-game-view {
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  padding: 6px 8px env(safe-area-inset-bottom, 8px) 8px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  width: 100vw;
+  max-width: 100vw;
+}
+
+.player-game-view .game-hud-header {
+  margin-bottom: 2px !important;
+  padding: 0 4px;
+  gap: 4px;
+}
+
+.player-game-view .game-hud-center {
+  gap: 2px;
+}
+
+.player-game-view .game-hud-center div:first-child {
+  font-size: 1rem !important;
+  line-height: 1.1;
+}
+
+.player-game-view .game-hud-center div:last-child {
+  font-size: 0.82rem !important;
+  line-height: 1.1;
+}
+
+.player-game-view .clue-banner {
+  padding: 6px 10px !important;
+  margin-bottom: 4px !important;
+  border-radius: 12px;
+}
+
+.player-game-view .clue-banner h2 {
+  font-size: 0.95rem !important;
+  margin-bottom: 2px !important;
+}
+
+.player-game-view .clue-banner p {
+  font-size: 0.78rem !important;
+  margin-bottom: 6px !important;
+}
+
+.player-game-view .captain-clue-form {
+  gap: 6px;
+}
+
+.player-game-view .clue-word-field input {
+  padding: 0.4rem 0.65rem;
+  font-size: 0.9rem;
+}
+
+.player-game-view .clue-num-field {
+  padding: 0.2rem 0.5rem;
+  gap: 4px;
+}
+
+.player-game-view .clue-num-field label {
+  font-size: 0.75rem;
+}
+
+.player-game-view .clue-num-field select {
+  font-size: 0.85rem;
+  padding: 0.15rem 0;
+}
+
+.player-game-view .clue-submit-btn {
+  padding: 0.4rem 0.85rem !important;
+  font-size: 0.85rem !important;
+}
+
+.player-game-view .game-grid {
+  flex: 1;
+  min-height: 0;
+  margin-top: 2px !important;
+  margin-bottom: 2px !important;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, 1fr);
+  gap: 5px;
+  width: 100%;
+  max-width: 500px;
+  align-self: center;
+  perspective: none;
+}
+
+.player-game-view .tile {
+  width: 100%;
+  height: 100%;
+  max-height: calc((100dvh - 165px) / 5);
+  aspect-ratio: auto;
+  margin: 0;
+}
+
+.player-game-view .tile-front {
+  border-radius: 8px;
+}
+
+.player-game-view .tile-front img {
+  max-height: 85%;
+  max-width: 85%;
+  object-fit: contain;
+}
+
 
