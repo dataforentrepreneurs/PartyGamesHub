@@ -140,39 +140,71 @@ header p {
   }
 }
 
-/* Feedback Feature Styles */
 .feedback-trigger-btn {
   position: fixed;
   bottom: 2rem;
   right: 2rem;
-  background: rgba(43, 43, 54, 0.85);
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: rgba(43, 43, 54, 0.75);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 1.4rem;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: center;
+  opacity: 0.78;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   z-index: 100;
 }
 
-.feedback-trigger-btn:hover {
-  transform: translateY(-3px) scale(1.05);
+.feedback-trigger-btn:hover,
+.feedback-trigger-btn:focus {
+  opacity: 1;
+  transform: translateY(-2px) scale(1.1);
   border-color: var(--ghibli-gold, #f39c12);
-  box-shadow: 0 15px 30px rgba(243, 156, 18, 0.3);
+  box-shadow: 0 10px 25px rgba(243, 156, 18, 0.4);
+  outline: none;
 }
 
-.feedback-trigger-btn:focus {
-  outline: none;
-  transform: translateY(-3px) scale(1.05);
-  border-color: var(--ghibli-gold, #f39c12);
-  box-shadow: 0 0 20px rgba(243, 156, 18, 0.8);
+/* Micro-Tooltip on Hover / Focus */
+.icon-btn-tooltip {
+  position: relative;
+}
+
+.icon-btn-tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 10px);
+  right: 0;
+  transform: translateY(4px);
+  background: rgba(18, 18, 26, 0.95);
+  color: #fff;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+}
+
+.icon-btn-tooltip:hover::after,
+.icon-btn-tooltip:focus-visible::after {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
 }
 
 .feedback-modal-overlay {

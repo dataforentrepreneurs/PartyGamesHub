@@ -748,9 +748,12 @@ function App() {
       {isHostUser && view !== 'landing' && (
         <button 
           onClick={() => window.location.href = '/'}
-          className="hub-btn"
+          className="hub-btn icon-btn-tooltip icon-btn-tooltip-bottom"
+          data-tooltip="Hub"
+          title="Back to Hub"
+          aria-label="Back to Hub"
         >
-          🏠 Hub
+          <Home size={20} />
         </button>
       )}
 
@@ -873,17 +876,19 @@ function App() {
           <div className="game-top-bar">
             <button 
               onClick={() => window.location.href = '/'}
-              className="top-bar-btn"
+              className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
               title="Back to Hub"
+              data-tooltip="Hub"
               aria-label="Back to Hub"
             >
-              <Home size={18} /> Hub
+              <Home size={20} />
             </button>
             <div className="top-bar-right">
               <button 
                 onClick={toggleSound}
-                className="top-bar-btn icon-only"
-                title={soundEnabled ? "Mute Sound Effects" : "Enable Sound Effects"}
+                className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
+                title={soundEnabled ? "Mute Sound" : "Enable Sound"}
+                data-tooltip={soundEnabled ? "Mute" : "Sound"}
                 aria-label="Sound Toggle"
               >
                 {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
@@ -896,11 +901,12 @@ function App() {
                   setFeedbackType('general');
                   setShowFeedbackModal(true);
                 }}
-                className="top-bar-btn"
+                className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
                 title="Give Feedback"
+                data-tooltip="Feedback"
                 aria-label="Give Feedback"
               >
-                <MessageSquare size={18} /> Feedback
+                <MessageSquare size={20} />
               </button>
             </div>
           </div>
@@ -1546,27 +1552,12 @@ function App() {
             setFeedbackType('general');
             setShowFeedbackModal(true);
           }}
-          style={{
-            position: 'fixed',
-            bottom: '16px',
-            right: '16px',
-            zIndex: 90,
-            background: 'rgba(245, 158, 11, 0.15)',
-            border: '1px solid rgba(245, 158, 11, 0.4)',
-            color: 'white',
-            borderRadius: '9999px',
-            padding: '8px 16px',
-            fontSize: '0.85rem',
-            fontWeight: 700,
-            cursor: 'pointer',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px'
-          }}
+          className="in-game-floating-feedback-btn icon-btn-tooltip"
+          data-tooltip="Feedback"
           title="Give Feedback"
+          aria-label="Give Feedback"
         >
-          <MessageSquare size={16} /> Feedback
+          <MessageSquare size={20} />
         </button>
       )}
 
