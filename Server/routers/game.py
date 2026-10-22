@@ -107,7 +107,8 @@ async def process_judging(room_code: str, room):
             "current_round": room.current_round,
             "max_rounds": room.max_rounds,
             "round_deltas": room.last_round_deltas,
-            "ai_latency_seconds": eval_result.ai_latency_seconds
+            "ai_latency_seconds": eval_result.ai_latency_seconds,
+            "all_player_history": room.player_history if room.current_round >= room.max_rounds else {}
         })
     except Exception as e:
         import traceback
@@ -251,6 +252,11 @@ async def websocket_endpoint(
                     continue
                 mode = message.get("mode", "classic")
                 
+                # Notify clients immediately that the next round is being prepared
+                await manager.broadcast_to_room(room_code, {
+                    "event": "round_starting"
+                })
+                
                 ai_prompt = await generate_creative_prompt(room.theme)
                 fallback_list = FALLBACK_PROMPTS.get(room.theme, FALLBACK_PROMPTS["Family"])
                 selected_prompt = ai_prompt if ai_prompt else random.choice(fallback_list)
@@ -268,6 +274,17 @@ async def websocket_endpoint(
                     "duration_seconds": duration,
                     "current_round": room.current_round,
                     "max_rounds": room.max_rounds
+                })
+                
+                await manager.broadcast_to_room(room_code, {
+                    "event": "room_state_update",
+                    "status": room.status,
+                    "players": room.players,
+                    "current_round": room.current_round,
+                    "max_rounds": room.max_rounds,
+                    "theme": room.theme,
+                    "time_left": duration,
+                    "host_id": room.host_id
                 })
                 
             elif event == "update_settings":

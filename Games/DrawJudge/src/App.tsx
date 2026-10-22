@@ -154,7 +154,11 @@ function App() {
     };
   }, [isHostUser]);
 
-  const [showFullGallery, setShowFullGallery] = useState(false);
+  const [, setShowFullGallery] = useState(false);
+  const [playerResultsTab, setPlayerResultsTab] = useState<'my_result' | 'all_drawings' | 'standings'>('my_result');
+  const [isStartingNextRound, setIsStartingNextRound] = useState(false);
+  const [hostShowAllHistory, setHostShowAllHistory] = useState(false);
+  const [allPlayerHistory, setAllPlayerHistory] = useState<Record<string, any[]>>({});
   const [hasPlayedFinale, setHasPlayedFinale] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isConnected, setIsConnected] = useState(true);
@@ -337,16 +341,19 @@ function App() {
       setView('drawing');
     }
 
-    if (params.get('test')?.startsWith('results') || params.get('test')?.startsWith('leaderboard')) {
+    if (params.get('test')?.startsWith('results') || params.get('test')?.startsWith('leaderboard') || params.get('test')?.startsWith('winner')) {
       const isHost = params.get('test')?.includes('host');
       const isLead = params.get('test')?.includes('leaderboard');
+      const isWinner = params.get('test')?.includes('winner');
       const mockImg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%231a1f33'/><circle cx='150' cy='180' r='70' fill='%2338bdf8'/><path d='M100 280 Q150 220 200 280' stroke='%23f43f5e' stroke-width='12' fill='none'/><circle cx='130' cy='160' r='12' fill='white'/><circle cx='170' cy='160' r='12' fill='white'/><text x='150' y='360' font-size='22' font-weight='bold' fill='%23facc15' text-anchor='middle'>Astronaut</text></svg>";
-      
+      const mockImg2 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%23131b2e'/><rect x='80' y='120' width='140' height='160' rx='20' fill='%23ec4899'/><circle cx='150' cy='200' r='40' fill='%23facc15'/><text x='150' y='350' font-size='22' font-weight='bold' fill='white' text-anchor='middle'>Cyber Dog</text></svg>";
+      const mockImg3 = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%231a1528'/><polygon points='150,80 80,240 220,240' fill='%23a855f7'/><circle cx='150' cy='170' r='25' fill='%2338bdf8'/><text x='150' y='350' font-size='22' font-weight='bold' fill='%234ade80' text-anchor='middle'>Rocket</text></svg>";
+
       const mockPlayers = [
-        { id: playerId, name: 'Alice Walker', score: 95 },
-        { id: 'p2', name: 'Bob Wonder', score: 88 },
-        { id: 'p3', name: 'Charlie Champion', score: 76 },
-        { id: 'p4', name: 'Diana Masterpiece', score: 65 },
+        { id: playerId, name: 'Alice Walker', score: isWinner ? 285 : 95 },
+        { id: 'p2', name: 'Bob Wonder', score: isWinner ? 240 : 88 },
+        { id: 'p3', name: 'Charlie Champion', score: isWinner ? 210 : 76 },
+        { id: 'p4', name: 'Diana Masterpiece', score: isWinner ? 165 : 65 },
       ];
       const mockResults = [
         {
@@ -358,26 +365,50 @@ function App() {
         },
         {
           submission_id: 'p2',
-          image: mockImg,
+          image: mockImg2,
           total_score: 88,
           scores: { prompt_relevance: 23, creativity: 22, clarity: 22, entertainment: 21 },
           comment: "Very bold lines and delightful composition."
         },
         {
           submission_id: 'p3',
-          image: mockImg,
+          image: mockImg3,
           total_score: 76,
           scores: { prompt_relevance: 20, creativity: 19, clarity: 18, entertainment: 19 },
           comment: "Hilarious interpretation of the prompt!"
         }
       ];
+
+      const mockHistory = {
+        [playerId]: [
+          { round: 1, prompt: "Dancing astronaut", image: mockImg, total_score: 95, comment: "Pure cosmic genius!" },
+          { round: 2, prompt: "Cyberpunk dog", image: mockImg2, total_score: 96, comment: "Neon perfection." },
+          { round: 3, prompt: "Space rocket", image: mockImg3, total_score: 94, comment: "Ready for takeoff!" }
+        ],
+        p2: [
+          { round: 1, prompt: "Dancing astronaut", image: mockImg2, total_score: 88, comment: "Great vibe." },
+          { round: 2, prompt: "Cyberpunk dog", image: mockImg, total_score: 80, comment: "Nice colors." }
+        ],
+        p3: [
+          { round: 1, prompt: "Dancing astronaut", image: mockImg3, total_score: 76, comment: "Funny drawing." }
+        ]
+      };
+
       setPlayers(mockPlayers);
       setResults(mockResults);
+      setAllPlayerHistory(mockHistory);
+      if (isWinner && isHost) {
+        setSelectedPlayerHistory(mockHistory[playerId]);
+        setSelectedPlayerName('Alice Walker');
+      } else {
+        setSelectedPlayerHistory(null);
+        setSelectedPlayerName('');
+      }
       setRoundSummary("Alice conquered the cosmos with an electrifying dancing astronaut!");
       setWinnerExplanation("Remarkable creativity and attention to detail that won the AI judge's heart.");
       setIsHostUser(Boolean(isHost));
-      setCurrentRound(3);
-      setMaxRounds(5);
+      setCurrentRound(isWinner ? 3 : 2);
+      setMaxRounds(3);
       setRoundDeltas({ [playerId]: 25, p2: 18, p3: 15 });
       setView(isLead ? 'leaderboard' : 'results');
     }
@@ -542,9 +573,17 @@ function App() {
             setView('judging');
           }
         }
+      } else if (data.event === 'round_starting') {
+        setIsStartingNextRound(true);
       } else if (data.event === 'round_started') {
+        setIsStartingNextRound(false);
+        hasSubmittedRef.current = false;
         setHasSubmittedThisRound(false);
         setHasSubmittedImage(null);
+        setSelectedPlayerHistory(null);
+        setSelectedPlayerName('');
+        setShowFullGallery(false);
+        setPlayerResultsTab('my_result');
         setPrompt(data.prompt);
         setGameMode(data.mode || 'classic');
         if (data.duration_seconds !== undefined) {
@@ -556,13 +595,19 @@ function App() {
         setSubmissionCount(0);
         setView('drawing');
       } else if (data.event === 'judging_started') {
+        setIsStartingNextRound(false);
         setView('judging');
       } else if (data.event === 'results_ready') {
+        setIsStartingNextRound(false);
         playTadaSound();
         setResults(data.results);
         setRoundSummary(data.round_summary || '');
         setWinnerExplanation(data.winner_explanation || '');
         setShowFullGallery(false);
+        setPlayerResultsTab('my_result');
+        if (data.all_player_history) {
+          setAllPlayerHistory(data.all_player_history);
+        }
         if (data.leaderboard) {
           const playerList = Object.keys(data.leaderboard).map(pid => ({ id: pid, ...data.leaderboard[pid] }));
           setPlayers(playerList);
@@ -1183,7 +1228,7 @@ function App() {
             </div>
           </div>
         ) : (
-          <DrawCanvas onSubmit={handleDrawSubmit} prompt={prompt} timeLeft={timeLeft} mode={gameMode} />
+          <DrawCanvas key={`canvas-r${currentRound}-${prompt}`} onSubmit={handleDrawSubmit} prompt={prompt} timeLeft={timeLeft} mode={gameMode} />
         )
       )}
 
@@ -1196,233 +1241,501 @@ function App() {
       )}
 
       {view === 'results' && isHostUser && (
-        <div className="host-results-container animate-pop-in">
-          <div className="host-results-header">
-            <div className="host-results-title-badge">
-              <Crown size={28} className="text-primary inline" />
-              <span>ROUND WINNER</span>
-            </div>
-            {roundSummary && (
-              <p className="host-results-summary">
-                🎭 "{roundSummary}"
-              </p>
-            )}
-          </div>
+        currentRound >= maxRounds && !hostShowAllHistory ? (
+          /* ==========================================================================
+             HOST GRAND CHAMPION PODIUM CEREMONY (100VH BALANCED / NO DEAD SPACE)
+             ========================================================================== */
+          (() => {
+            const sortedLeaderboard = [...players].sort((a, b) => b.score - a.score);
+            const grandChampion = sortedLeaderboard[0];
+            const secondPlace = sortedLeaderboard[1];
+            const thirdPlace = sortedLeaderboard[2];
+            const otherRankedPlayers = sortedLeaderboard.slice(3);
 
-          <div className="host-results-grid">
-            {/* Winner Card */}
-            <div className="glass-panel host-winner-card">
-              <div className="host-winner-badge">
-                <Crown size={22} />
-                <span>1ST PLACE • {players.find(p => p.id === results[0]?.submission_id)?.name || 'Winner'}</span>
-              </div>
-              <div className="host-winner-content">
-                {results[0]?.image && (
-                  <div className="host-winner-image-wrap">
-                    <img src={results[0].image} alt="Winner Drawing" className="host-winner-image" />
+            // History drawings for the champion
+            const champHistory = (grandChampion && grandChampion.id ? allPlayerHistory[grandChampion.id] : null) 
+              || selectedPlayerHistory 
+              || results.filter(r => r.submission_id === grandChampion?.id);
+
+            return (
+              <div className="host-grand-champion-screen animate-pop-in">
+                {/* Header */}
+                <div className="champion-ceremony-header">
+                  <div className="champion-trophy-icon">🏆</div>
+                  <h1 className="champion-ceremony-title">GRAND CHAMPION CROWNED!</h1>
+                  <p className="champion-ceremony-sub">
+                    All {maxRounds} Rounds Complete • Ultimate Victory!
+                  </p>
+                </div>
+
+                {/* 3-Column Olympic Podium Layout */}
+                <div className="champion-podium-row">
+                  {/* 2nd Place Runner-Up */}
+                  {secondPlace && (
+                    <div className="glass-panel champion-podium-card champion-card-second animate-slide-up">
+                      <div className="podium-rank-badge silver">🥈 2ND PLACE</div>
+                      <h2 className="podium-player-name">{secondPlace.name}</h2>
+                      <div className="podium-score-wrap">
+                        <span className="podium-score-val">{secondPlace.score}</span>
+                        <span className="podium-score-unit">PTS</span>
+                      </div>
+                      {(() => {
+                        const pHistory = (secondPlace.id ? allPlayerHistory[secondPlace.id] : null) || results.filter(r => r.submission_id === secondPlace.id);
+                        const topItem = pHistory?.[0];
+                        return topItem?.image ? (
+                          <div className="podium-thumb-wrap">
+                            <img src={topItem.image} alt="Runner-up Art" className="podium-thumb-img" />
+                            <span className="podium-thumb-prompt">"{topItem.prompt || 'Best Artwork'}"</span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+
+                  {/* 1st Place Grand Champion (Center, Elevated & Featured) */}
+                  {grandChampion && (
+                    <div className="glass-panel champion-podium-card champion-card-first animate-pop-in">
+                      <div className="podium-crown-badge">👑 1ST PLACE CHAMPION 🏆</div>
+                      <h1 className="champion-player-name">{grandChampion.name}</h1>
+                      <div className="champion-score-wrap">
+                        <span className="champion-score-val">{grandChampion.score}</span>
+                        <span className="champion-score-unit">PTS</span>
+                      </div>
+
+                      {/* Champion's Masterpieces Showcase */}
+                      <div className="champion-showcase-title">🎨 CHAMPION'S MASTERPIECES</div>
+                      <div className="champion-mosaic-gallery">
+                        {(champHistory && champHistory.length > 0 ? champHistory.slice(0, 3) : results.slice(0, 1)).map((item: any, idx: number) => (
+                          <div key={idx} className="champion-mosaic-item">
+                            <span className="mosaic-round-pill">Round {item.round || (idx + 1)}</span>
+                            {item.image && (
+                              <img src={item.image} alt="Champion Artwork" className="champion-mosaic-img" />
+                            )}
+                            <span className="mosaic-prompt-text">"{item.prompt || 'Masterpiece'}"</span>
+                            <span className="mosaic-score-text">{item.total_score} pts</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {winnerExplanation && (
+                        <div className="champion-ai-verdict">
+                          🤖 <strong>AI Verdict:</strong> "{winnerExplanation}"
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 3rd Place Runner-Up */}
+                  {thirdPlace && (
+                    <div className="glass-panel champion-podium-card champion-card-third animate-slide-up">
+                      <div className="podium-rank-badge bronze">🥉 3RD PLACE</div>
+                      <h2 className="podium-player-name">{thirdPlace.name}</h2>
+                      <div className="podium-score-wrap">
+                        <span className="podium-score-val">{thirdPlace.score}</span>
+                        <span className="podium-score-unit">PTS</span>
+                      </div>
+                      {(() => {
+                        const pHistory = (thirdPlace.id ? allPlayerHistory[thirdPlace.id] : null) || results.filter(r => r.submission_id === thirdPlace.id);
+                        const topItem = pHistory?.[0];
+                        return topItem?.image ? (
+                          <div className="podium-thumb-wrap">
+                            <img src={topItem.image} alt="Bronze Art" className="podium-thumb-img" />
+                            <span className="podium-thumb-prompt">"{topItem.prompt || 'Best Artwork'}"</span>
+                          </div>
+                        ) : null;
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Other Ranked Players Ticker (4th, 5th, etc.) */}
+                {otherRankedPlayers.length > 0 && (
+                  <div className="champion-other-players-ticker">
+                    {otherRankedPlayers.map((p, idx) => (
+                      <span key={p.id} className="other-player-pill">
+                        #{idx + 4} {p.name}: <strong>{p.score} pts</strong>
+                      </span>
+                    ))}
                   </div>
                 )}
-                <div className="host-winner-details">
-                  <div className="host-winner-score-row">
-                    <span className="host-winner-score-val">{results[0]?.total_score}</span>
-                    <span className="host-winner-score-unit">PTS</span>
-                  </div>
 
-                  {results[0]?.scores && (
-                    <div className="score-metrics-wrap">
-                      <span className="metric-pill">🎯 Rel: {results[0].scores.prompt_relevance}</span>
-                      <span className="metric-pill">💡 Cre: {results[0].scores.creativity}</span>
-                      <span className="metric-pill">✏️ Cla: {results[0].scores.clarity}</span>
-                      <span className="metric-pill">😂 Fun: {results[0].scores.entertainment}</span>
+                {/* Bottom Action Bar */}
+                <div className="champion-ceremony-actions">
+                  <button 
+                    className="btn-secondary" 
+                    onClick={() => setHostShowAllHistory(true)}
+                    style={{ padding: '12px 24px', fontSize: '1.1rem' }}
+                  >
+                    📊 View Detailed Standings
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    onClick={() => {
+                      setView('hostLobby');
+                      if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
+                    }}
+                    style={{ padding: '12px 32px', fontSize: '1.25rem', fontWeight: 900 }}
+                  >
+                    🏆 Setup New Game
+                  </button>
+                </div>
+              </div>
+            );
+          })()
+        ) : (
+          /* ==========================================================================
+             REGULAR ROUND RESULTS (OR DETAILED STANDINGS VIEW)
+             ========================================================================== */
+          <div className="host-results-container animate-pop-in">
+            <div className="host-results-header">
+              <div className="host-results-title-badge">
+                <Crown size={28} className="text-primary inline" />
+                <span>{currentRound >= maxRounds ? 'FINAL ROUND RESULTS' : `ROUND ${currentRound} WINNER`}</span>
+              </div>
+              {roundSummary && (
+                <p className="host-results-summary">
+                  🎭 "{roundSummary}"
+                </p>
+              )}
+            </div>
+
+            <div className="host-results-grid">
+              {/* Winner Card */}
+              <div className="glass-panel host-winner-card">
+                <div className="host-winner-badge">
+                  <Crown size={22} />
+                  <span>1ST PLACE • {players.find(p => p.id === results[0]?.submission_id)?.name || 'Winner'}</span>
+                </div>
+                <div className="host-winner-content">
+                  {results[0]?.image && (
+                    <div className="host-winner-image-wrap">
+                      <img src={results[0].image} alt="Winner Drawing" className="host-winner-image" />
                     </div>
                   )}
-
-                  <div className="host-ai-quote">
-                    "{results[0]?.comment}"
-                  </div>
-
-                  {winnerExplanation && (
-                    <div className="host-ai-verdict">
-                      🤖 <strong>Why they won:</strong> {winnerExplanation}
+                  <div className="host-winner-details">
+                    <div className="host-winner-score-row">
+                      <span className="host-winner-score-val">{results[0]?.total_score}</span>
+                      <span className="host-winner-score-unit">PTS</span>
                     </div>
-                  )}
+
+                    {results[0]?.scores && (
+                      <div className="score-metrics-wrap">
+                        <span className="metric-pill">🎯 Rel: {results[0].scores.prompt_relevance}</span>
+                        <span className="metric-pill">💡 Cre: {results[0].scores.creativity}</span>
+                        <span className="metric-pill">✏️ Cla: {results[0].scores.clarity}</span>
+                        <span className="metric-pill">😂 Fun: {results[0].scores.entertainment}</span>
+                      </div>
+                    )}
+
+                    <div className="host-ai-quote">
+                      "{results[0]?.comment}"
+                    </div>
+
+                    {winnerExplanation && (
+                      <div className="host-ai-verdict">
+                        🤖 <strong>Why they won:</strong> {winnerExplanation}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Runner Ups Column */}
+              <div className="host-runnerups-column">
+                <div className="host-runnerups-header">
+                  <span>🏅 RUNNER-UPS</span>
+                  <span className="host-runnerups-count">{results.slice(1).length} entries</span>
+                </div>
+                <div className="host-runnerups-list">
+                  {results.slice(1).map((r, i) => {
+                    const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
+                    return (
+                      <div key={i} className="glass-panel host-runnerup-card">
+                        {r.image && (
+                          <img src={r.image} alt="Drawing" className="host-runnerup-thumb" />
+                        )}
+                        <div className="host-runnerup-info">
+                          <div className="host-runnerup-top">
+                            <span className="host-runnerup-name">#{i + 2} {player.name}</span>
+                            <div className="host-runnerup-score">
+                              <span className="score-val">{r.total_score}</span>
+                              <span className="score-unit">pts</span>
+                            </div>
+                          </div>
+
+                          {r.scores && (
+                            <div className="score-metrics-mini">
+                              <span>Rel {r.scores.prompt_relevance}</span>
+                              <span>Cre {r.scores.creativity}</span>
+                              <span>Cla {r.scores.clarity}</span>
+                              <span>Fun {r.scores.entertainment}</span>
+                            </div>
+                          )}
+
+                          <div className="host-runnerup-comment">
+                            "{r.comment}"
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* Runner Ups Column */}
-            <div className="host-runnerups-column">
-              <div className="host-runnerups-header">
-                <span>🏅 RUNNER-UPS</span>
-                <span className="host-runnerups-count">{results.slice(1).length} entries</span>
+            <div className="host-results-actions" style={{ gap: '16px' }}>
+              {currentRound >= maxRounds ? (
+                <>
+                  <button className="btn-secondary host-leaderboard-btn" onClick={() => setHostShowAllHistory(false)}>
+                    🏆 Show Champion Podium
+                  </button>
+                  <button className="btn-primary" style={{ padding: '14px 28px', fontSize: '1.25rem', fontWeight: 800 }} onClick={() => {
+                    setView('hostLobby');
+                    if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
+                  }}>
+                    🏆 Setup New Game
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className="btn-secondary host-leaderboard-btn" onClick={() => setView('leaderboard')}>
+                    View Standings 🏆
+                  </button>
+                  <button 
+                    className="btn-primary" 
+                    style={{ padding: '14px 32px', fontSize: '1.25rem', fontWeight: 800 }}
+                    disabled={isStartingNextRound}
+                    onClick={() => {
+                      if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
+                    }}
+                  >
+                    {isStartingNextRound ? '⏳ Starting Next Round...' : 'Start Next Round 🚀'}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        )
+      )}
+
+      {/* ==========================================================================
+         PARTICIPANT / PLAYER RESULTS (3-TAB SEGMENTED EXPERIENCE)
+         ========================================================================== */}
+      {view === 'results' && !isHostUser && (
+        <div className="player-results-container animate-slide-up">
+          {/* Header Status Bar */}
+          <div className="player-results-status-bar">
+            {currentRound >= maxRounds ? (
+              <div className="player-host-alert-pill winner-pill">
+                <span>🏆 FINAL GAME RESULTS 🏆</span>
               </div>
-              <div className="host-runnerups-list">
-                {results.slice(1).map((r, i) => {
-                  const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
+            ) : (
+              <div className="player-host-alert-pill">
+                <span className="live-pulse-dot" />
+                <span>Round {currentRound} of {maxRounds} • AI Scored!</span>
+              </div>
+            )}
+          </div>
+
+          {/* Next round starting banner if host triggered it */}
+          {isStartingNextRound && (
+            <div className="round-starting-alert animate-pulse">
+              ⏳ Host is starting the next round... Ready your canvas!
+            </div>
+          )}
+
+          {/* 3-Tab Segmented Control */}
+          <div className="player-results-segmented-tabs">
+            <button
+              className={`segmented-tab-btn ${playerResultsTab === 'my_result' ? 'active' : ''}`}
+              onClick={() => setPlayerResultsTab('my_result')}
+            >
+              🎨 My Score
+            </button>
+            <button
+              className={`segmented-tab-btn ${playerResultsTab === 'all_drawings' ? 'active' : ''}`}
+              onClick={() => setPlayerResultsTab('all_drawings')}
+            >
+              🖼️ All Drawings ({results.length})
+            </button>
+            <button
+              className={`segmented-tab-btn ${playerResultsTab === 'standings' ? 'active' : ''}`}
+              onClick={() => setPlayerResultsTab('standings')}
+            >
+              🏆 Standings
+            </button>
+          </div>
+
+          {/* TAB 1: MY SCORE */}
+          {playerResultsTab === 'my_result' && (() => {
+            const myRank = results.findIndex(r => r.submission_id === playerId);
+            const myRes = myRank !== -1 ? results[myRank] : null;
+            if (!myRes) {
+              return (
+                <div className="glass-panel text-center" style={{ padding: '32px 16px' }}>
+                  <p className="subtitle">No drawing submitted this round.</p>
+                  <button className="btn-secondary mt-4 w-full" onClick={() => setPlayerResultsTab('all_drawings')}>
+                    View Everyone's Drawings 🖼️
+                  </button>
+                </div>
+              );
+            }
+
+            const rankText = myRank === 0 
+              ? '👑 1st Place • Winner!' 
+              : myRank === 1 
+              ? '🥈 2nd Place' 
+              : myRank === 2 
+              ? '🥉 3rd Place' 
+              : `🎨 Placement: #${myRank + 1}`;
+
+            return (
+              <div className="player-tab-content animate-slide-up">
+                <div className="glass-panel player-card-showcase" id="my-share-card">
+                  <div className={`player-rank-badge ${myRank === 0 ? 'winner' : ''}`}>
+                    <span>{rankText}</span>
+                  </div>
+
+                  {myRes.image && (
+                    <div className="player-artwork-frame">
+                      <img src={myRes.image} alt="Your Drawing" className="player-artwork-img" />
+                    </div>
+                  )}
+
+                  <div className="player-score-banner">
+                    <span className="player-score-label">ROUND SCORE</span>
+                    <div className="player-score-val-row">
+                      <span className="player-score-number">{myRes.total_score}</span>
+                      <span className="player-score-pts">PTS</span>
+                    </div>
+                    {roundDeltas[playerId] !== undefined && roundDeltas[playerId] > 0 && (
+                      <span className="delta-badge" style={{ marginTop: '4px' }}>
+                        ↑ +{roundDeltas[playerId]} pts added to total
+                      </span>
+                    )}
+                  </div>
+
+                  {myRes.scores && (
+                    <div className="player-metrics-grid">
+                      <div className="metric-chip"><span>🎯 Relevance</span><strong>{myRes.scores.prompt_relevance}</strong></div>
+                      <div className="metric-chip"><span>💡 Creativity</span><strong>{myRes.scores.creativity}</strong></div>
+                      <div className="metric-chip"><span>✏️ Clarity</span><strong>{myRes.scores.clarity}</strong></div>
+                      <div className="metric-chip"><span>😂 Fun</span><strong>{myRes.scores.entertainment}</strong></div>
+                    </div>
+                  )}
+
+                  <div className="player-ai-comment-card">
+                    <div className="comment-header">🤖 AI JUDGE FEEDBACK</div>
+                    <p className="comment-quote">"{myRes.comment}"</p>
+                  </div>
+                </div>
+
+                <button
+                  className="btn-primary w-full player-share-btn mt-2"
+                  disabled={isSharing}
+                  onClick={() => handleShare('my-share-card', 'MyDrawing')}
+                >
+                  {isSharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
+                  <span>{isSharing ? 'Generating Image...' : 'Share Drawing 📸'}</span>
+                </button>
+              </div>
+            );
+          })()}
+
+          {/* TAB 2: ALL DRAWINGS (Everyone else's as well) */}
+          {playerResultsTab === 'all_drawings' && (
+            <div className="player-tab-content animate-slide-up">
+              <div className="player-all-drawings-list">
+                {results.map((r, i) => {
+                  const player = players.find(p => p.id === r.submission_id) || { name: 'Player' };
+                  const isMe = r.submission_id === playerId;
                   return (
-                    <div key={i} className="glass-panel host-runnerup-card">
+                    <div key={i} className={`glass-panel player-gallery-card ${isMe ? 'my-highlight-card' : ''}`}>
+                      <div className="gallery-card-top">
+                        <span className={`gallery-rank-pill ${i === 0 ? 'winner' : ''}`}>
+                          {i === 0 ? '👑 1ST' : i === 1 ? '🥈 2ND' : i === 2 ? '🥉 3RD' : `#${i + 1}`}
+                        </span>
+                        <h4 className="gallery-player-name">
+                          {player.name} {isMe && <span className="you-tag">(You)</span>}
+                        </h4>
+                        <div className="gallery-score-badge">
+                          <span className="score-val">{r.total_score}</span>
+                          <span className="score-unit">pts</span>
+                        </div>
+                      </div>
+
                       {r.image && (
-                        <img src={r.image} alt="Drawing" className="host-runnerup-thumb" />
+                        <div className="player-artwork-frame small">
+                          <img src={r.image} alt={`${player.name}'s Drawing`} className="player-artwork-img" />
+                        </div>
                       )}
-                      <div className="host-runnerup-info">
-                        <div className="host-runnerup-top">
-                          <span className="host-runnerup-name">#{i + 2} {player.name}</span>
-                          <div className="host-runnerup-score">
-                            <span className="score-val">{r.total_score}</span>
-                            <span className="score-unit">pts</span>
-                          </div>
-                        </div>
 
-                        {r.scores && (
-                          <div className="score-metrics-mini">
-                            <span>Rel {r.scores.prompt_relevance}</span>
-                            <span>Cre {r.scores.creativity}</span>
-                            <span>Cla {r.scores.clarity}</span>
-                            <span>Fun {r.scores.entertainment}</span>
-                          </div>
-                        )}
-
-                        <div className="host-runnerup-comment">
-                          "{r.comment}"
+                      {r.scores && (
+                        <div className="player-metrics-grid mini">
+                          <div className="metric-chip">Rel: <strong>{r.scores.prompt_relevance}</strong></div>
+                          <div className="metric-chip">Cre: <strong>{r.scores.creativity}</strong></div>
+                          <div className="metric-chip">Cla: <strong>{r.scores.clarity}</strong></div>
+                          <div className="metric-chip">Fun: <strong>{r.scores.entertainment}</strong></div>
                         </div>
+                      )}
+
+                      <div className="player-ai-comment-card mini">
+                        <p className="comment-quote">"{r.comment}"</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
+          )}
 
-          <div className="host-results-actions">
-            <button className="btn-primary host-leaderboard-btn" onClick={() => setView('leaderboard')}>
-              View Overall Leaderboard 🏆
-            </button>
-          </div>
-        </div>
-      )}
+          {/* TAB 3: STANDINGS / LEADERBOARD */}
+          {playerResultsTab === 'standings' && (
+            <div className="player-tab-content animate-slide-up">
+              <div className="glass-panel text-center" style={{ padding: '20px 14px' }}>
+                <Trophy size={32} className="text-primary" style={{ margin: '0 auto 8px auto' }} />
+                <h3 className="title-giant" style={{ fontSize: '1.6rem', marginBottom: '2px' }}>
+                  {currentRound >= maxRounds ? 'FINAL STANDINGS' : 'OVERALL STANDINGS'}
+                </h3>
+                <p className="subtitle" style={{ fontSize: '0.85rem', marginBottom: '14px' }}>
+                  {currentRound >= maxRounds ? 'Total Game Scores' : `Round ${currentRound} of ${maxRounds}`}
+                </p>
 
-      {view === 'results' && !isHostUser && (
-        <div className="player-results-container animate-slide-up">
-          <div className="player-host-alert-pill">
-            <span className="live-pulse-dot" />
-            <span>Look at the main screen for all drawings!</span>
-          </div>
-
-          {!showFullGallery ? (
-            <>
-              {(() => {
-                const myRank = results.findIndex(r => r.submission_id === playerId);
-                const myRes = myRank !== -1 ? results[myRank] : null;
-                if (!myRes) return null;
-
-                const rankText = myRank === 0 ? '👑 1st Place • Winner!' : myRank === 1 ? '🥈 2nd Place' : myRank === 2 ? '🥉 3rd Place' : `🎨 Placement: #${myRank + 1}`;
-
-                return (
-                  <div className="glass-panel player-card-showcase" id="my-share-card">
-                    <div className="player-rank-badge">
-                      <span>{rankText}</span>
-                    </div>
-
-                    {myRes.image && (
-                      <div className="player-artwork-frame">
-                        <img src={myRes.image} alt="Your Drawing" className="player-artwork-img" />
+                <div className="leaderboard-list">
+                  {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                    <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''} ${p.id === playerId ? 'leaderboard-row-me' : ''}`}>
+                      <div className="leaderboard-col-player">
+                        <div className={`rank-badge rank-badge-${i + 1}`}>
+                          {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                        </div>
+                        <span className="player-row-name" title={p.name}>
+                          {p.name} {p.id === playerId && '(You)'}
+                        </span>
                       </div>
-                    )}
 
-                    <div className="player-score-banner">
-                      <span className="player-score-label">ROUND SCORE</span>
-                      <div className="player-score-val-row">
-                        <span className="player-score-number">{myRes.total_score}</span>
-                        <span className="player-score-pts">PTS</span>
+                      <div className="leaderboard-col-delta">
+                        {roundDeltas[p.id || ''] !== undefined && roundDeltas[p.id || ''] > 0 && (
+                          <span className="delta-badge">
+                            ↑ +{roundDeltas[p.id || '']}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="leaderboard-col-score">
+                        <span className="score-val">{p.score}</span>
+                        <span className="score-unit">PTS</span>
                       </div>
                     </div>
-
-                    {myRes.scores && (
-                      <div className="player-metrics-grid">
-                        <div className="metric-chip"><span>🎯 Relevance</span><strong>{myRes.scores.prompt_relevance}</strong></div>
-                        <div className="metric-chip"><span>💡 Creativity</span><strong>{myRes.scores.creativity}</strong></div>
-                        <div className="metric-chip"><span>✏️ Clarity</span><strong>{myRes.scores.clarity}</strong></div>
-                        <div className="metric-chip"><span>😂 Fun</span><strong>{myRes.scores.entertainment}</strong></div>
-                      </div>
-                    )}
-
-                    <div className="player-ai-comment-card">
-                      <div className="comment-header">🤖 AI JUDGE FEEDBACK</div>
-                      <p className="comment-quote">"{myRes.comment}"</p>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {(() => {
-                const myRank = results.findIndex(r => r.submission_id === playerId);
-                if (myRank === -1) return null;
-                return (
-                  <button
-                    className="btn-primary w-full player-share-btn"
-                    disabled={isSharing}
-                    onClick={() => handleShare('my-share-card', 'MyDrawing')}
-                  >
-                    {isSharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
-                    <span>{isSharing ? 'Generating Image...' : 'Share Drawing 📸'}</span>
-                  </button>
-                );
-              })()}
-
-              <div className="player-nav-btns-row">
-                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowFullGallery(true)}>
-                  🖼️ Gallery
-                </button>
-                <button className="btn-secondary player-leaderboard-btn" style={{ flex: 1 }} onClick={() => setView('leaderboard')}>
-                  🏆 Leaderboard
-                </button>
+                  ))}
+                </div>
               </div>
-            </>
-          ) : (
-            <div className="player-gallery-container animate-slide-up">
-              <button className="btn-secondary w-full player-back-btn" onClick={() => setShowFullGallery(false)}>
-                <ArrowLeft size={18} />
-                <span>Back to My Score</span>
-              </button>
-
-              {results.map((r, i) => {
-                const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
-                return (
-                  <div key={i} className="glass-panel player-gallery-card">
-                    <div className="gallery-card-top">
-                      <span className={`gallery-rank-pill ${i === 0 ? 'winner' : ''}`}>
-                        {i === 0 ? '👑 WINNER' : `#${i + 1}`}
-                      </span>
-                      <h4 className="gallery-player-name">{player.name}</h4>
-                      <div className="gallery-score-badge">
-                        <span className="score-val">{r.total_score}</span>
-                        <span className="score-unit">pts</span>
-                      </div>
-                    </div>
-
-                    {r.image && (
-                      <div className="player-artwork-frame small">
-                        <img src={r.image} alt="Drawing" className="player-artwork-img" />
-                      </div>
-                    )}
-
-                    {r.scores && (
-                      <div className="player-metrics-grid mini">
-                        <div className="metric-chip">Rel: <strong>{r.scores.prompt_relevance}</strong></div>
-                        <div className="metric-chip">Cre: <strong>{r.scores.creativity}</strong></div>
-                        <div className="metric-chip">Cla: <strong>{r.scores.clarity}</strong></div>
-                        <div className="metric-chip">Fun: <strong>{r.scores.entertainment}</strong></div>
-                      </div>
-                    )}
-
-                    <div className="player-ai-comment-card mini">
-                      <p className="comment-quote">"{r.comment}"</p>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
           )}
+
+          <div className="player-waiting-bottom-pill">
+            <span className="live-pulse-dot" />
+            <span>Waiting for Host to start next round...</span>
+          </div>
         </div>
       )}
 
@@ -1489,9 +1802,16 @@ function App() {
                       setView('hostLobby');
                       if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
                     }}>⚙️ Settings & Setup</button>
-                    <button className="btn-primary" style={{ padding: '20px', fontSize: '1.35rem' }} onClick={() => {
-                      if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
-                    }}>Start Next Round</button>
+                    <button 
+                      className="btn-primary" 
+                      style={{ padding: '20px', fontSize: '1.35rem' }} 
+                      disabled={isStartingNextRound}
+                      onClick={() => {
+                        if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
+                      }}
+                    >
+                      {isStartingNextRound ? '⏳ Generating Next Round...' : 'Start Next Round 🚀'}
+                    </button>
                   </>
                 )}
               </div>
@@ -1550,28 +1870,6 @@ function App() {
             </div>
           </div>
         )
-      )}
-
-      {/* Ultimate Winner Gallery */}
-      {currentRound >= maxRounds && isHostUser && selectedPlayerHistory && (
-        <div className="glass-panel w-full mt-8 animate-pop-in" style={{ padding: '24px', border: '3px solid var(--primary)', background: 'linear-gradient(145deg, rgba(200,0,100,0.1), transparent)' }}>
-          <h3 className="text-primary" style={{ fontSize: '2.5rem', marginBottom: '16px', textTransform: 'uppercase' }}>
-            {players.sort((a, b) => b.score - a.score)[0]?.name === selectedPlayerName
-              ? `🏆 ULTIMATE WINNER: ${selectedPlayerName} 🏆`
-              : `🎨 ${selectedPlayerName}'S SHOWCASE`}
-          </h3>
-          <p className="subtitle mb-6" style={{ color: 'hsla(0,0%,100%,0.8)' }}>A gallery of their masterpieces</p>
-          <div style={{ display: 'flex', overflowX: 'auto', gap: '16px', paddingBottom: '16px', alignItems: 'stretch', textAlign: 'left' }}>
-            {selectedPlayerHistory.map((item, idx) => (
-              <div key={idx} className="glass-panel" style={{ minWidth: '320px', flex: '0 0 auto', padding: '16px', display: 'flex', flexDirection: 'column', background: 'rgba(0,0,0,0.5)' }}>
-                <h4 style={{ fontSize: '1.2rem', marginBottom: '8px', color: 'white' }}>Round {item.round}: {item.prompt}</h4>
-                {item.image && <img src={item.image} alt="Drawing" style={{ width: '100%', maxWidth: '280px', aspectRatio: '3/4', objectFit: 'contain', background: '#1a1f33', borderRadius: '16px', border: '2px solid hsla(0,0%,100%,0.2)', marginBottom: '12px', alignSelf: 'center' }} />}
-                <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{item.total_score} pts</h4>
-                <div style={{ fontStyle: 'italic', fontSize: '1rem', background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px', flex: 1 }}>"{item.comment}"</div>
-              </div>
-            ))}
-          </div>
-        </div>
       )}
 
       {/* History Modal Overlay for manually clicking players or the Grand Recap */}

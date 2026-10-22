@@ -46,6 +46,14 @@ export default function DrawCanvas({ onSubmit, prompt, timeLeft, mode }: DrawCan
     hasSubmittedRef.current = hasSubmitted;
   }, [onSubmit, hasSubmitted]);
 
+  // Clean reset whenever prompt changes to a new round
+  useEffect(() => {
+    setHasSubmitted(false);
+    hasSubmittedRef.current = false;
+    setPaths([]);
+    setCurrentPath(null);
+  }, [prompt]);
+
   // Auto-submit when time runs out
   useEffect(() => {
     if (timeLeft === 0 && !hasSubmitted) {

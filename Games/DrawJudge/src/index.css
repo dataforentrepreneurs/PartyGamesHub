@@ -1642,3 +1642,477 @@ html.host-mode #root {
   animation: spin 1s linear infinite;
 }
 
+/* ==========================================================================
+   HOST GRAND CHAMPION PODIUM CEREMONY (100VH BALANCED / NO DEAD SPACE)
+   ========================================================================== */
+.host-grand-champion-screen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+}
+
+.champion-ceremony-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.champion-trophy-icon {
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  line-height: 1;
+  filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.6));
+  animation: float-champion 3s ease-in-out infinite alternate;
+}
+
+@keyframes float-champion {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-6px); }
+}
+
+.champion-ceremony-title {
+  font-size: clamp(1.8rem, 3.2vw, 2.7rem);
+  font-weight: 950;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #ffffff 0%, #fbbf24 50%, #f59e0b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  filter: drop-shadow(0 0 20px rgba(251, 191, 36, 0.45));
+}
+
+.champion-ceremony-sub {
+  font-size: clamp(0.9rem, 1.3vw, 1.15rem);
+  color: hsla(0, 0%, 100%, 0.85);
+  margin: 0;
+}
+
+.champion-podium-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: center;
+  gap: 18px;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+.champion-podium-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 14px;
+  border-radius: var(--radius-lg);
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.champion-card-first {
+  flex: 1.6;
+  border: 3px solid #fbbf24;
+  background: linear-gradient(160deg, hsla(45, 95%, 45%, 0.22), hsla(230, 25%, 13%, 0.96));
+  box-shadow: 0 0 45px rgba(251, 191, 36, 0.35);
+  z-index: 2;
+  justify-content: space-between;
+}
+
+.champion-card-second {
+  flex: 1;
+  border: 2px solid #cbd5e1;
+  background: linear-gradient(160deg, hsla(215, 20%, 55%, 0.16), hsla(230, 25%, 13%, 0.96));
+  box-shadow: 0 0 25px rgba(203, 213, 225, 0.2);
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.champion-card-third {
+  flex: 1;
+  border: 2px solid #cd7f32;
+  background: linear-gradient(160deg, hsla(30, 60%, 45%, 0.16), hsla(230, 25%, 13%, 0.96));
+  box-shadow: 0 0 25px rgba(205, 127, 50, 0.2);
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.podium-crown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 18px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fbbf24, #d97706);
+  color: #1a1608;
+  font-weight: 900;
+  font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+  letter-spacing: 1px;
+  box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4);
+  flex-shrink: 0;
+}
+
+.podium-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.podium-rank-badge.silver {
+  background: linear-gradient(135deg, #94a3b8, #64748b);
+  color: white;
+  box-shadow: 0 4px 12px rgba(148, 163, 184, 0.3);
+}
+
+.podium-rank-badge.bronze {
+  background: linear-gradient(135deg, #d97706, #92400e);
+  color: white;
+  box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
+}
+
+.champion-player-name {
+  font-size: clamp(1.6rem, 2.8vw, 2.4rem);
+  font-weight: 950;
+  margin: 4px 0 2px 0;
+  color: #ffffff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.podium-player-name {
+  font-size: clamp(1.2rem, 1.8vw, 1.55rem);
+  font-weight: 850;
+  margin: 4px 0 2px 0;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.champion-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.champion-score-val {
+  font-size: clamp(2rem, 3.2vw, 3rem);
+  font-weight: 950;
+  color: #fbbf24;
+  line-height: 1;
+}
+
+.champion-score-unit {
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: hsla(0, 0%, 100%, 0.7);
+  letter-spacing: 1px;
+}
+
+.podium-score-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.podium-score-val {
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+.podium-score-unit {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: hsla(0, 0%, 100%, 0.6);
+}
+
+.champion-showcase-title {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: hsla(0, 0%, 100%, 0.85);
+  margin: 4px 0;
+  text-transform: uppercase;
+}
+
+.champion-mosaic-gallery {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  justify-content: center;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  margin: 4px 0;
+}
+
+.champion-mosaic-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid hsla(45, 95%, 45%, 0.3);
+  border-radius: 10px;
+  padding: 6px;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  justify-content: space-between;
+}
+
+.mosaic-round-pill {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.15);
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-bottom: 2px;
+}
+
+.champion-mosaic-img {
+  flex: 1;
+  min-height: 0;
+  max-height: 140px;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: contain;
+  border-radius: 6px;
+  background: #0d1117;
+  border: 1px solid hsla(0, 0%, 100%, 0.12);
+}
+
+.mosaic-prompt-text {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: hsla(0, 0%, 100%, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 2px;
+}
+
+.mosaic-score-text {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #fbbf24;
+}
+
+.podium-thumb-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid hsla(0, 0%, 100%, 0.1);
+  border-radius: 12px;
+  padding: 8px;
+  margin-top: 6px;
+}
+
+.podium-thumb-img {
+  flex: 1;
+  min-height: 0;
+  max-height: 190px;
+  width: auto;
+  max-width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #0d1117;
+  border: 1px solid hsla(0, 0%, 100%, 0.15);
+}
+
+.podium-thumb-prompt {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: hsla(0, 0%, 100%, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  margin-top: 4px;
+}
+
+.champion-ai-verdict {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: hsla(0, 0%, 100%, 0.9);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid hsla(0, 0%, 100%, 0.1);
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-top: 4px;
+  max-width: 100%;
+  flex-shrink: 0;
+}
+
+.champion-other-players-ticker {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  padding: 4px 12px;
+  flex-shrink: 0;
+}
+
+.other-player-pill {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid hsla(0, 0%, 100%, 0.12);
+  border-radius: 14px;
+  padding: 3px 10px;
+  font-size: 0.8rem;
+  color: hsla(0, 0%, 100%, 0.85);
+}
+
+.champion-ceremony-actions {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   PLAYER RESULTS SEGMENTED TABS & SECTIONS
+   ========================================================================== */
+.player-results-status-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.winner-pill {
+  background: linear-gradient(135deg, #d97706, #b45309) !important;
+  color: #fff !important;
+  font-weight: 800 !important;
+  letter-spacing: 1px;
+}
+
+.round-starting-alert {
+  background: linear-gradient(135deg, hsla(320, 90%, 65%, 0.25), hsla(230, 25%, 20%, 0.9));
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: white;
+  text-align: center;
+  box-shadow: 0 4px 16px hsla(320, 90%, 65%, 0.3);
+  flex-shrink: 0;
+}
+
+.player-results-segmented-tabs {
+  display: flex;
+  background: hsla(230, 25%, 12%, 0.9);
+  border: 1px solid hsla(0, 0%, 100%, 0.15);
+  border-radius: 14px;
+  padding: 4px;
+  gap: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.segmented-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 4px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: hsla(0, 0%, 100%, 0.7);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.segmented-tab-btn.active {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: white;
+  box-shadow: 0 4px 14px hsla(320, 90%, 65%, 0.35);
+}
+
+.player-tab-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 12px;
+}
+
+.player-all-drawings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
+.my-highlight-card {
+  border: 2px solid var(--primary) !important;
+  box-shadow: 0 0 20px hsla(320, 90%, 65%, 0.25) !important;
+}
+
+.you-tag {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.leaderboard-row-me {
+  border: 1px solid var(--primary) !important;
+  background: hsla(320, 90%, 65%, 0.12) !important;
+}
+
+.player-waiting-bottom-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: hsla(0, 0%, 100%, 0.75);
+  margin-top: 4px;
+  flex-shrink: 0;
+}
+

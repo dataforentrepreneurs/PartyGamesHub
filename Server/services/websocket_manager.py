@@ -21,11 +21,20 @@ class ConnectionManager:
 
     async def broadcast_to_room(self, room_code: str, message: dict):
         if room_code in self.active_connections:
-            for connection in self.active_connections[room_code].values():
-                await connection.send_json(message)
+            dead_connections = []
+            for pid, connection in list(self.active_connections[room_code].items()):
+                try:
+                    await connection.send_json(message)
+                except Exception:
+                    dead_connections.append(pid)
+            for pid in dead_connections:
+                self.disconnect(room_code, pid)
 
     async def send_to_player(self, room_code: str, player_id: str, message: dict):
         if room_code in self.active_connections and player_id in self.active_connections[room_code]:
-            await self.active_connections[room_code][player_id].send_json(message)
+            try:
+                await self.active_connections[room_code][player_id].send_json(message)
+            except Exception:
+                self.disconnect(room_code, player_id)
 
 manager = ConnectionManager()
