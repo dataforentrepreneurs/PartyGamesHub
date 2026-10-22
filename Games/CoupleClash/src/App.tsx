@@ -520,24 +520,21 @@ function App() {
 
   const renderFeedbackAndExitModals = () => (
     <>
-      {/* Floating In-Game Feedback Button */}
-      {view !== 'landing' && (
-        <button 
-          onClick={() => {
-            setSubmitSuccess(false);
-            setRating(null);
-            setComment('');
-            setFeedbackType('general');
-            setShowFeedbackModal(true);
-          }}
-          className="in-game-floating-feedback-btn icon-btn-tooltip"
-          data-tooltip="Feedback"
-          title="Give Feedback"
-          aria-label="Give Feedback"
-        >
-          <MessageSquare size={20} />
-        </button>
-      )}
+      {/* Floating In-Game Feedback Button (Bottom Right) */}
+      <button 
+        onClick={() => {
+          setSubmitSuccess(false);
+          setRating(null);
+          setComment('');
+          setFeedbackType('general');
+          setShowFeedbackModal(true);
+        }}
+        className="in-game-floating-feedback-btn"
+        title="Give Feedback"
+        aria-label="Give Feedback"
+      >
+        <MessageSquare size={20} />
+      </button>
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (
@@ -763,31 +760,15 @@ function App() {
         <div className="game-top-bar">
           <button 
             onClick={() => window.location.href = '/'}
-            className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
+            className="top-bar-btn icon-only"
             title="Back to Hub"
-            data-tooltip="Hub"
             aria-label="Back to Hub"
           >
             <Home size={20} />
           </button>
-          <button 
-            onClick={() => {
-              setSubmitSuccess(false);
-              setRating(null);
-              setComment('');
-              setFeedbackType('general');
-              setShowFeedbackModal(true);
-            }}
-            className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
-            title="Give Feedback"
-            data-tooltip="Feedback"
-            aria-label="Give Feedback"
-          >
-            <MessageSquare size={20} />
-          </button>
         </div>
 
-        <div className="animate-float">
+        <div>
           <h1 className="title-giant">CodePic</h1>
           <p className="subtitle">Picture Wars: Blue vs Pink</p>
         </div>
@@ -955,6 +936,21 @@ function App() {
             </div>
           </div>
         )}
+        {/* Floating Feedback Trigger Button (Bottom Right) */}
+        <button 
+          onClick={() => {
+            setSubmitSuccess(false);
+            setRating(null);
+            setComment('');
+            setFeedbackType('general');
+            setShowFeedbackModal(true);
+          }}
+          className="in-game-floating-feedback-btn"
+          title="Give Feedback"
+          aria-label="Give Feedback"
+        >
+          <MessageSquare size={20} />
+        </button>
       </div>
     );
   }
@@ -965,8 +961,7 @@ function App() {
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
-            className="hub-btn icon-btn-tooltip icon-btn-tooltip-bottom"
-            data-tooltip="Hub"
+            className="hub-btn"
             title="Back to Hub"
             aria-label="Back to Hub"
           >
@@ -1128,15 +1123,14 @@ function App() {
         {isHostUser && (
           <button 
             onClick={() => window.location.href = '/'}
-            className="hub-btn icon-btn-tooltip icon-btn-tooltip-bottom"
-            data-tooltip="Hub"
+            className="hub-btn"
             title="Back to Hub"
             aria-label="Back to Hub"
           >
             <Home size={20} />
           </button>
         )}
-        <div className="animate-float">
+        <div>
           <h1 className="title-giant" style={{ color: winnerColor }}>{winnerName} Wins!</h1>
           <p className="subtitle">Congratulations to the victors!</p>
         </div>
@@ -1176,8 +1170,7 @@ function App() {
       {isHostUser && (
         <button 
           onClick={() => window.location.href = '/'}
-          className="hub-btn icon-btn-tooltip icon-btn-tooltip-bottom"
-          data-tooltip="Hub"
+          className="hub-btn"
           title="Back to Hub"
           aria-label="Back to Hub"
         >

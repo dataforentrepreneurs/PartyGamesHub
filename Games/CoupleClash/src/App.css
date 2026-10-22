@@ -213,19 +213,15 @@ body {
 
 /* Animations */
 @keyframes pulse-glow {
-  0% { box-shadow: 0 0 20px var(--primary-glow); }
-  50% { box-shadow: 0 0 40px var(--primary-glow); }
-  100% { box-shadow: 0 0 20px var(--primary-glow); }
+  0%, 100% { box-shadow: none; }
 }
 
 .animate-float {
-  animation: float 6s ease-in-out infinite;
+  /* Continuous floating disabled for stable screen */
 }
 
 @keyframes float {
-  0% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
-  100% { transform: translateY(0px); }
+  0%, 100% { transform: none; }
 }
 
 .badge {
@@ -654,10 +650,10 @@ html.host-mode #root {
 /* In-Game Floating Feedback Trigger */
 .in-game-floating-feedback-btn {
   position: fixed;
-  bottom: 16px;
-  right: 16px;
-  z-index: 900;
-  background: rgba(79, 128, 255, 0.2);
+  bottom: 20px;
+  right: 20px;
+  z-index: 1000;
+  background: rgba(79, 128, 255, 0.25);
   border: 1px solid rgba(79, 128, 255, 0.45);
   color: white;
   width: 44px;
@@ -671,7 +667,7 @@ html.host-mode #root {
   justify-content: center;
   opacity: 0.78;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
 }
 
 .in-game-floating-feedback-btn:hover,
@@ -683,62 +679,9 @@ html.host-mode #root {
   outline: none;
 }
 
-/* Tooltip on Hover / Focus */
-.icon-btn-tooltip {
-  position: relative;
-}
-
+/* Tooltips disabled completely for self-explanatory pure icons */
 .icon-btn-tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%) translateY(4px);
-  background: rgba(18, 18, 26, 0.95);
-  color: #fff;
-  padding: 5px 11px;
-  border-radius: 7px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
-}
-
-.icon-btn-tooltip-bottom::after {
-  bottom: auto;
-  top: calc(100% + 8px);
-}
-
-.top-bar-right .icon-btn-tooltip::after,
-.in-game-floating-feedback-btn.icon-btn-tooltip::after {
-  left: auto;
-  right: 0;
-  transform: translateY(4px);
-}
-
-.game-top-bar > .icon-btn-tooltip::after {
-  left: 0;
-  transform: translateY(4px);
-}
-
-.icon-btn-tooltip-bottom.top-bar-right::after,
-.icon-btn-tooltip-bottom.top-bar-btn::after {
-  transform: translateY(-4px);
-}
-
-.icon-btn-tooltip:hover::after,
-.icon-btn-tooltip:focus-visible::after {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  display: none !important;
 }
 
 /* --- Host Session Recovery Card --- */
@@ -751,7 +694,6 @@ html.host-mode #root {
   width: 100%;
   max-width: 480px;
   box-shadow: 0 0 25px rgba(79, 128, 255, 0.35);
-  animation: pulse-glow 3s infinite alternate;
 }
 
 .host-recovery-content {

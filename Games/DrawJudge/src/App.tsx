@@ -748,8 +748,7 @@ function App() {
       {isHostUser && view !== 'landing' && (
         <button 
           onClick={() => window.location.href = '/'}
-          className="hub-btn icon-btn-tooltip icon-btn-tooltip-bottom"
-          data-tooltip="Hub"
+          className="hub-btn"
           title="Back to Hub"
           aria-label="Back to Hub"
         >
@@ -872,13 +871,12 @@ function App() {
 
       {view === 'landing' && (
         <div className="flex-col">
-          {/* Top Bar with Hub, Sound Toggle, and Feedback */}
+          {/* Top Bar with Hub and Sound Toggle */}
           <div className="game-top-bar">
             <button 
               onClick={() => window.location.href = '/'}
-              className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
+              className="top-bar-btn icon-only"
               title="Back to Hub"
-              data-tooltip="Hub"
               aria-label="Back to Hub"
             >
               <Home size={20} />
@@ -886,27 +884,11 @@ function App() {
             <div className="top-bar-right">
               <button 
                 onClick={toggleSound}
-                className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
+                className="top-bar-btn icon-only"
                 title={soundEnabled ? "Mute Sound" : "Enable Sound"}
-                data-tooltip={soundEnabled ? "Mute" : "Sound"}
                 aria-label="Sound Toggle"
               >
                 {soundEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-              </button>
-              <button 
-                onClick={() => {
-                  setFeedbackSuccess(false);
-                  setRating(null);
-                  setFeedbackComment('');
-                  setFeedbackType('general');
-                  setShowFeedbackModal(true);
-                }}
-                className="top-bar-btn icon-only icon-btn-tooltip icon-btn-tooltip-bottom"
-                title="Give Feedback"
-                data-tooltip="Feedback"
-                aria-label="Give Feedback"
-              >
-                <MessageSquare size={20} />
               </button>
             </div>
           </div>
@@ -938,7 +920,7 @@ function App() {
           )}
 
           <div className="glass-panel flex-col">
-            <button className="btn-primary" onClick={handleCreateRoom} style={{ animation: 'pulse-glow 2s infinite' }}><Play size={24} /> Create Game</button>
+            <button className="btn-primary" onClick={handleCreateRoom}><Play size={24} /> Create Game</button>
             <button className="btn-secondary" onClick={() => setView('join')}><Users size={24} /> Join Room</button>
             <button className="btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ background: 'rgba(255,255,255,0.1)', marginTop: '8px' }}>
               ❓ How to Play
@@ -1542,24 +1524,21 @@ function App() {
         </div>
       )}
 
-      {/* Floating Feedback Trigger Button (for in-game access) */}
-      {view !== 'landing' && (
-        <button 
-          onClick={() => {
-            setFeedbackSuccess(false);
-            setRating(null);
-            setFeedbackComment('');
-            setFeedbackType('general');
-            setShowFeedbackModal(true);
-          }}
-          className="in-game-floating-feedback-btn icon-btn-tooltip"
-          data-tooltip="Feedback"
-          title="Give Feedback"
-          aria-label="Give Feedback"
-        >
-          <MessageSquare size={20} />
-        </button>
-      )}
+      {/* Floating Feedback Trigger Button (Bottom Right) */}
+      <button 
+        onClick={() => {
+          setFeedbackSuccess(false);
+          setRating(null);
+          setFeedbackComment('');
+          setFeedbackType('general');
+          setShowFeedbackModal(true);
+        }}
+        className="in-game-floating-feedback-btn"
+        title="Give Feedback"
+        aria-label="Give Feedback"
+      >
+        <MessageSquare size={20} />
+      </button>
 
       {/* Exit Confirmation Modal */}
       {showExitConfirm && (

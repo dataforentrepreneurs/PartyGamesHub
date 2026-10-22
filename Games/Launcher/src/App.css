@@ -171,40 +171,9 @@ header p {
   outline: none;
 }
 
-/* Micro-Tooltip on Hover / Focus */
-.icon-btn-tooltip {
-  position: relative;
-}
-
+/* Tooltips disabled completely for self-explanatory pure icons */
 .icon-btn-tooltip::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 10px);
-  right: 0;
-  transform: translateY(4px);
-  background: rgba(18, 18, 26, 0.95);
-  color: #fff;
-  padding: 5px 12px;
-  border-radius: 8px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
-  pointer-events: none;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s ease;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(8px);
-  z-index: 1000;
-}
-
-.icon-btn-tooltip:hover::after,
-.icon-btn-tooltip:focus-visible::after {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+  display: none !important;
 }
 
 .feedback-modal-overlay {
