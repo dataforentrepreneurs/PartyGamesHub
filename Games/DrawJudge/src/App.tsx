@@ -336,6 +336,51 @@ function App() {
       setIsHostUser(false);
       setView('drawing');
     }
+
+    if (params.get('test')?.startsWith('results') || params.get('test')?.startsWith('leaderboard')) {
+      const isHost = params.get('test')?.includes('host');
+      const isLead = params.get('test')?.includes('leaderboard');
+      const mockImg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='400' viewBox='0 0 300 400'><rect width='300' height='400' fill='%231a1f33'/><circle cx='150' cy='180' r='70' fill='%2338bdf8'/><path d='M100 280 Q150 220 200 280' stroke='%23f43f5e' stroke-width='12' fill='none'/><circle cx='130' cy='160' r='12' fill='white'/><circle cx='170' cy='160' r='12' fill='white'/><text x='150' y='360' font-size='22' font-weight='bold' fill='%23facc15' text-anchor='middle'>Astronaut</text></svg>";
+      
+      const mockPlayers = [
+        { id: playerId, name: 'Alice Walker', score: 95 },
+        { id: 'p2', name: 'Bob Wonder', score: 88 },
+        { id: 'p3', name: 'Charlie Champion', score: 76 },
+        { id: 'p4', name: 'Diana Masterpiece', score: 65 },
+      ];
+      const mockResults = [
+        {
+          submission_id: playerId,
+          image: mockImg,
+          total_score: 95,
+          scores: { prompt_relevance: 25, creativity: 24, clarity: 23, entertainment: 23 },
+          comment: "Incredible lunar energy, the colors pop with great attitude!"
+        },
+        {
+          submission_id: 'p2',
+          image: mockImg,
+          total_score: 88,
+          scores: { prompt_relevance: 23, creativity: 22, clarity: 22, entertainment: 21 },
+          comment: "Very bold lines and delightful composition."
+        },
+        {
+          submission_id: 'p3',
+          image: mockImg,
+          total_score: 76,
+          scores: { prompt_relevance: 20, creativity: 19, clarity: 18, entertainment: 19 },
+          comment: "Hilarious interpretation of the prompt!"
+        }
+      ];
+      setPlayers(mockPlayers);
+      setResults(mockResults);
+      setRoundSummary("Alice conquered the cosmos with an electrifying dancing astronaut!");
+      setWinnerExplanation("Remarkable creativity and attention to detail that won the AI judge's heart.");
+      setIsHostUser(Boolean(isHost));
+      setCurrentRound(3);
+      setMaxRounds(5);
+      setRoundDeltas({ [playerId]: 25, p2: 18, p3: 15 });
+      setView(isLead ? 'leaderboard' : 'results');
+    }
   }, []);
 
   useEffect(() => {
@@ -863,15 +908,27 @@ function App() {
 
       {/* Persistent Room Code on Host screen */}
       {isHostUser && view !== 'landing' && view !== 'join' && view !== 'hostLobby' && (
-        <div className="glass-panel text-center persistent-room-code-card">
-          <div style={{ background: 'white', padding: '4px', borderRadius: '8px', display: 'flex' }}>
-            <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={view === 'drawing' ? 140 : 90} />
+        view === 'results' || view === 'leaderboard' ? (
+          <div className="persistent-room-code-compact animate-fade-in" title="Room Join Info">
+            <div style={{ background: 'white', padding: '2px', borderRadius: '6px', display: 'flex' }}>
+              <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={38} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', textAlign: 'left', lineHeight: 1.1 }}>
+              <span style={{ fontSize: '0.65rem', color: 'hsla(0,0%,100%,0.7)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Room Code</span>
+              <span style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--primary)', letterSpacing: '1px' }}>{roomCode}</span>
+            </div>
           </div>
-          <div className="flex-col text-left">
-            <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {backendConfig.host}/drawjudge</span>
-            <span style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1 }}>Code: <span className="text-primary">{roomCode}</span></span>
+        ) : (
+          <div className="glass-panel text-center persistent-room-code-card">
+            <div style={{ background: 'white', padding: '4px', borderRadius: '8px', display: 'flex' }}>
+              <QRCodeSVG value={backendConfig.getJoinUrl(roomCode)} size={view === 'drawing' ? 140 : 90} />
+            </div>
+            <div className="flex-col text-left">
+              <span style={{ fontSize: '0.85rem', color: 'hsla(0,0%,100%,0.8)', fontWeight: 'bold', textTransform: 'uppercase' }}>Join at {backendConfig.host}/drawjudge</span>
+              <span style={{ fontSize: '1.5rem', fontWeight: 900, lineHeight: 1 }}>Code: <span className="text-primary">{roomCode}</span></span>
+            </div>
           </div>
-        </div>
+        )
       )}
 
       {view === 'landing' && (
@@ -1139,104 +1196,118 @@ function App() {
       )}
 
       {view === 'results' && isHostUser && (
-        <div className="flex-col w-full text-center animate-pop-in" style={{ margin: '0 auto', height: '100%', display: 'flex', flexDirection: 'column' }}>
-          <div className="text-center mb-2 pt-2" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <h2 className="title-giant" style={{ fontSize: '2rem', letterSpacing: '2px', margin: 0 }}>
-              <Crown size={28} className="text-primary inline mr-2" style={{ verticalAlign: 'middle' }} />
-              ROUND WINNER
-            </h2>
+        <div className="host-results-container animate-pop-in">
+          <div className="host-results-header">
+            <div className="host-results-title-badge">
+              <Crown size={28} className="text-primary inline" />
+              <span>ROUND WINNER</span>
+            </div>
             {roundSummary && (
-              <p style={{ fontSize: '1.1rem', marginTop: '8px', fontStyle: 'italic', padding: '8px 16px', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', maxWidth: '800px', display: 'inline-block', marginBottom: 0 }}>
+              <p className="host-results-summary">
                 🎭 "{roundSummary}"
               </p>
             )}
           </div>
 
-          <div className="results-flex-container">
+          <div className="host-results-grid">
             {/* Winner Card */}
-            <div className="glass-panel" style={{ flex: 1.5, padding: '16px', border: '3px solid var(--primary)', boxShadow: '0 0 20px hsla(45, 100%, 50%, 0.2)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', marginBottom: '12px', textTransform: 'uppercase', textAlign: 'left' }}>
-                1st Place: {players.find(p => p.id === results[0]?.submission_id)?.name}
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'row', gap: '16px', flex: 1, minHeight: 0 }}>
+            <div className="glass-panel host-winner-card">
+              <div className="host-winner-badge">
+                <Crown size={22} />
+                <span>1ST PLACE • {players.find(p => p.id === results[0]?.submission_id)?.name || 'Winner'}</span>
+              </div>
+              <div className="host-winner-content">
                 {results[0]?.image && (
-                  <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 0 }}>
-                    <img src={results[0].image} alt="Winner Drawing" style={{ height: '100%', width: 'auto', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)', boxShadow: '0 8px 32px rgba(0,0,0,0.3)' }} />
+                  <div className="host-winner-image-wrap">
+                    <img src={results[0].image} alt="Winner Drawing" className="host-winner-image" />
                   </div>
                 )}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', paddingRight: '8px', textAlign: 'left' }}>
-                  <h3 className="text-primary" style={{ fontSize: '2.5rem', fontWeight: 900, marginBottom: '12px', lineHeight: '1' }}>{results[0]?.total_score} pts</h3>
+                <div className="host-winner-details">
+                  <div className="host-winner-score-row">
+                    <span className="host-winner-score-val">{results[0]?.total_score}</span>
+                    <span className="host-winner-score-unit">PTS</span>
+                  </div>
 
-                  {/* Score Breakdown Winner */}
                   {results[0]?.scores && (
-                    <div className="flex-row" style={{ gap: '8px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '0.85rem' }}>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '8px' }}>🎯 Relevance: {results[0].scores.prompt_relevance}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '8px' }}>💡 Creativity: {results[0].scores.creativity}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '8px' }}>✏️ Clarity: {results[0].scores.clarity}</span>
-                      <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '6px 10px', borderRadius: '8px' }}>😂 Fun: {results[0].scores.entertainment}</span>
+                    <div className="score-metrics-wrap">
+                      <span className="metric-pill">🎯 Rel: {results[0].scores.prompt_relevance}</span>
+                      <span className="metric-pill">💡 Cre: {results[0].scores.creativity}</span>
+                      <span className="metric-pill">✏️ Cla: {results[0].scores.clarity}</span>
+                      <span className="metric-pill">😂 Fun: {results[0].scores.entertainment}</span>
                     </div>
                   )}
 
-                  <div style={{ background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '12px', fontSize: '1.1rem', fontStyle: 'italic', fontWeight: '600', marginBottom: '16px' }}>
+                  <div className="host-ai-quote">
                     "{results[0]?.comment}"
                   </div>
 
                   {winnerExplanation && (
-                    <div style={{ background: 'var(--primary)', color: '#000', padding: '12px', borderRadius: '12px', fontSize: '0.95rem', fontWeight: 700 }}>
-                      🤖 <strong>AI on why they won:</strong> {winnerExplanation}
+                    <div className="host-ai-verdict">
+                      🤖 <strong>Why they won:</strong> {winnerExplanation}
                     </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {/* Runner Ups List - Scrollable vertically */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '12px', maxHeight: '100%' }}>
-              {results.slice(1).map((r, i) => {
-                const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
-                return (
-                  <div key={i} className="glass-panel" style={{ padding: '16px', display: 'flex', flexDirection: 'row', alignItems: 'center', gap: '16px' }}>
-                    {r.image && <img src={r.image} alt="Drawing" style={{ width: '140px', height: 'auto', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '12px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }} />}
-                    <div style={{ flex: 1, textAlign: 'left' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'white' }}>{player.name}</h4>
-                        <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, margin: 0 }}>{r.total_score} pts</h4>
-                      </div>
-
-                      {/* Score Breakdown Runner Ups */}
-                      {r.scores && (
-                        <div className="flex-row" style={{ gap: '6px', fontSize: '0.75rem', marginBottom: '8px', flexWrap: 'wrap' }}>
-                          <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Relevance {r.scores.prompt_relevance}</span>
-                          <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Creativity {r.scores.creativity}</span>
-                          <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Clarity {r.scores.clarity}</span>
-                          <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Fun {r.scores.entertainment}</span>
-                        </div>
+            {/* Runner Ups Column */}
+            <div className="host-runnerups-column">
+              <div className="host-runnerups-header">
+                <span>🏅 RUNNER-UPS</span>
+                <span className="host-runnerups-count">{results.slice(1).length} entries</span>
+              </div>
+              <div className="host-runnerups-list">
+                {results.slice(1).map((r, i) => {
+                  const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
+                  return (
+                    <div key={i} className="glass-panel host-runnerup-card">
+                      {r.image && (
+                        <img src={r.image} alt="Drawing" className="host-runnerup-thumb" />
                       )}
+                      <div className="host-runnerup-info">
+                        <div className="host-runnerup-top">
+                          <span className="host-runnerup-name">#{i + 2} {player.name}</span>
+                          <div className="host-runnerup-score">
+                            <span className="score-val">{r.total_score}</span>
+                            <span className="score-unit">pts</span>
+                          </div>
+                        </div>
 
-                      <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '8px', fontSize: '0.9rem', fontStyle: 'italic', color: 'hsla(0,0%,100%,0.9)' }}>
-                        "{r.comment}"
+                        {r.scores && (
+                          <div className="score-metrics-mini">
+                            <span>Rel {r.scores.prompt_relevance}</span>
+                            <span>Cre {r.scores.creativity}</span>
+                            <span>Cla {r.scores.clarity}</span>
+                            <span>Fun {r.scores.entertainment}</span>
+                          </div>
+                        )}
+
+                        <div className="host-runnerup-comment">
+                          "{r.comment}"
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          <div style={{ padding: '16px' }}>
-            <button className="btn-primary" style={{ fontSize: '1.25rem', padding: '12px 32px' }} onClick={() => setView('leaderboard')}>View Overall Leaderboard</button>
+          <div className="host-results-actions">
+            <button className="btn-primary host-leaderboard-btn" onClick={() => setView('leaderboard')}>
+              View Overall Leaderboard 🏆
+            </button>
           </div>
         </div>
       )}
 
       {view === 'results' && !isHostUser && (
-        <div className="flex-col w-full text-center animate-slide-up">
-          <div className="glass-panel text-center mb-6 pt-8 pb-8" style={{ border: '2px dashed var(--primary)' }}>
-            <h2 className="title-giant" style={{ fontSize: '2rem', marginBottom: '12px' }}>LOOK AT THE SCREEN!</h2>
-            <p className="subtitle" style={{ marginBottom: 0 }}>The Host projector is showing everyone's drawings.</p>
+        <div className="player-results-container animate-slide-up">
+          <div className="player-host-alert-pill">
+            <span className="live-pulse-dot" />
+            <span>Look at the main screen for all drawings!</span>
           </div>
 
-          {/* Show personal result constrainted view */}
           {!showFullGallery ? (
             <>
               {(() => {
@@ -1244,27 +1315,40 @@ function App() {
                 const myRes = myRank !== -1 ? results[myRank] : null;
                 if (!myRes) return null;
 
+                const rankText = myRank === 0 ? '👑 1st Place • Winner!' : myRank === 1 ? '🥈 2nd Place' : myRank === 2 ? '🥉 3rd Place' : `🎨 Placement: #${myRank + 1}`;
+
                 return (
-                  <div className="glass-panel text-left" id="my-share-card" style={{ padding: '24px', marginBottom: '16px' }}>
-                    <h3 style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)', textTransform: 'uppercase', marginBottom: '16px' }}>
-                      Your Placement: #{myRank + 1}
-                    </h3>
-                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                      {myRes.image && <img src={myRes.image} alt="Your Drawing" style={{ width: '100%', maxWidth: '320px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', marginBottom: '20px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)' }} />}
+                  <div className="glass-panel player-card-showcase" id="my-share-card">
+                    <div className="player-rank-badge">
+                      <span>{rankText}</span>
                     </div>
-                    <div className="flex-row justify-between mb-4">
-                      <h3 className="text-primary" style={{ fontSize: '2.5rem', fontWeight: 900, lineHeight: 1 }}>{myRes.total_score} pts</h3>
-                    </div>
-                    {myRes.scores && (
-                      <div className="flex-row" style={{ gap: '8px', flexWrap: 'wrap', marginBottom: '16px', fontSize: '0.85rem' }}>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '4px 8px', borderRadius: '4px' }}>🎯 Relevance: {myRes.scores.prompt_relevance}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '4px 8px', borderRadius: '4px' }}>💡 Creativity: {myRes.scores.creativity}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '4px 8px', borderRadius: '4px' }}>✏️ Clarity: {myRes.scores.clarity}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '4px 8px', borderRadius: '4px' }}>😂 Fun: {myRes.scores.entertainment}</span>
+
+                    {myRes.image && (
+                      <div className="player-artwork-frame">
+                        <img src={myRes.image} alt="Your Drawing" className="player-artwork-img" />
                       </div>
                     )}
-                    <div style={{ background: 'rgba(0,0,0,0.4)', padding: '16px', borderRadius: '12px', fontSize: '1.1rem', fontStyle: 'italic' }}>
-                      "{myRes.comment}"
+
+                    <div className="player-score-banner">
+                      <span className="player-score-label">ROUND SCORE</span>
+                      <div className="player-score-val-row">
+                        <span className="player-score-number">{myRes.total_score}</span>
+                        <span className="player-score-pts">PTS</span>
+                      </div>
+                    </div>
+
+                    {myRes.scores && (
+                      <div className="player-metrics-grid">
+                        <div className="metric-chip"><span>🎯 Relevance</span><strong>{myRes.scores.prompt_relevance}</strong></div>
+                        <div className="metric-chip"><span>💡 Creativity</span><strong>{myRes.scores.creativity}</strong></div>
+                        <div className="metric-chip"><span>✏️ Clarity</span><strong>{myRes.scores.clarity}</strong></div>
+                        <div className="metric-chip"><span>😂 Fun</span><strong>{myRes.scores.entertainment}</strong></div>
+                      </div>
+                    )}
+
+                    <div className="player-ai-comment-card">
+                      <div className="comment-header">🤖 AI JUDGE FEEDBACK</div>
+                      <p className="comment-quote">"{myRes.comment}"</p>
                     </div>
                   </div>
                 );
@@ -1275,47 +1359,64 @@ function App() {
                 if (myRank === -1) return null;
                 return (
                   <button
-                    className="btn-primary w-full mt-2 mb-4"
-                    style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px', opacity: isSharing ? 0.7 : 1 }}
+                    className="btn-primary w-full player-share-btn"
                     disabled={isSharing}
                     onClick={() => handleShare('my-share-card', 'MyDrawing')}
                   >
-                    {isSharing ? <Loader2 size={24} className="animate-spin" /> : <Share2 size={24} />}
-                    {isSharing ? 'Generating Image...' : 'Share to Story 📸'}
+                    {isSharing ? <Loader2 size={20} className="animate-spin" /> : <Share2 size={20} />}
+                    <span>{isSharing ? 'Generating Image...' : 'Share Drawing 📸'}</span>
                   </button>
                 );
               })()}
 
-              <button className="btn-secondary w-full" onClick={() => setShowFullGallery(true)}>View Full Gallery 🖼️</button>
-              <button className="btn-secondary w-full mt-4" style={{ border: '2px solid var(--primary)' }} onClick={() => setView('leaderboard')}>View Leaderboard 🏆</button>
+              <div className="player-nav-btns-row">
+                <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowFullGallery(true)}>
+                  🖼️ Gallery
+                </button>
+                <button className="btn-secondary player-leaderboard-btn" style={{ flex: 1 }} onClick={() => setView('leaderboard')}>
+                  🏆 Leaderboard
+                </button>
+              </div>
             </>
           ) : (
-            <div className="flex-col animate-slide-up" style={{ gap: '16px', textAlign: 'left', marginTop: '16px' }}>
-              <button className="btn-secondary w-full mb-4" onClick={() => setShowFullGallery(false)}><ArrowLeft size={20} style={{ display: 'inline', marginRight: '8px' }} /> Back to My Score</button>
+            <div className="player-gallery-container animate-slide-up">
+              <button className="btn-secondary w-full player-back-btn" onClick={() => setShowFullGallery(false)}>
+                <ArrowLeft size={18} />
+                <span>Back to My Score</span>
+              </button>
+
               {results.map((r, i) => {
                 const player = players.find(p => p.id === r.submission_id) || { name: 'Unknown' };
                 return (
-                  <div key={i} className="glass-panel text-left" style={{ padding: '20px', position: 'relative' }}>
-                    {i === 0 && <div style={{ position: 'absolute', top: '-12px', right: '-12px', background: 'var(--primary)', color: 'black', padding: '6px 12px', borderRadius: '16px', fontWeight: 900, fontSize: '0.8rem' }}>WINNER</div>}
-                    <h4 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '12px', color: i === 0 ? 'var(--primary)' : 'white' }}>
-                      {i + 1}. {player.name}
-                    </h4>
-                    <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                      {r.image && <img src={r.image} alt="Drawing" style={{ width: '100%', maxWidth: '320px', aspectRatio: '3/4', objectFit: 'contain', borderRadius: '16px', marginBottom: '12px', background: '#1a1f33', border: '2px solid hsla(0,0%,100%,0.2)' }} />}
+                  <div key={i} className="glass-panel player-gallery-card">
+                    <div className="gallery-card-top">
+                      <span className={`gallery-rank-pill ${i === 0 ? 'winner' : ''}`}>
+                        {i === 0 ? '👑 WINNER' : `#${i + 1}`}
+                      </span>
+                      <h4 className="gallery-player-name">{player.name}</h4>
+                      <div className="gallery-score-badge">
+                        <span className="score-val">{r.total_score}</span>
+                        <span className="score-unit">pts</span>
+                      </div>
                     </div>
-                    <h4 className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900, marginBottom: '8px' }}>{r.total_score} pts</h4>
 
-                    {r.scores && (
-                      <div className="flex-row" style={{ gap: '6px', fontSize: '0.8rem', marginBottom: '8px', flexWrap: 'wrap' }}>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Relevance: {r.scores.prompt_relevance}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Creativity: {r.scores.creativity}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Clarity: {r.scores.clarity}</span>
-                        <span style={{ background: 'hsla(0,0%,100%,0.1)', padding: '2px 6px', borderRadius: '4px' }}>Fun: {r.scores.entertainment}</span>
+                    {r.image && (
+                      <div className="player-artwork-frame small">
+                        <img src={r.image} alt="Drawing" className="player-artwork-img" />
                       </div>
                     )}
 
-                    <div style={{ background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px', fontSize: '1rem', fontStyle: 'italic', color: 'hsla(0,0%,100%,0.9)' }}>
-                      "{r.comment}"
+                    {r.scores && (
+                      <div className="player-metrics-grid mini">
+                        <div className="metric-chip">Rel: <strong>{r.scores.prompt_relevance}</strong></div>
+                        <div className="metric-chip">Cre: <strong>{r.scores.creativity}</strong></div>
+                        <div className="metric-chip">Cla: <strong>{r.scores.clarity}</strong></div>
+                        <div className="metric-chip">Fun: <strong>{r.scores.entertainment}</strong></div>
+                      </div>
+                    )}
+
+                    <div className="player-ai-comment-card mini">
+                      <p className="comment-quote">"{r.comment}"</p>
                     </div>
                   </div>
                 );
@@ -1329,41 +1430,42 @@ function App() {
         isHostUser ? (
           <div className="dashboard-layout animate-slide-up">
             <div className="dashboard-main glass-panel text-center">
-              <Trophy size={48} className="text-primary mb-4 w-full" style={{ margin: '0 auto' }} />
-              <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
+              <Trophy size={40} className="text-primary mb-2" style={{ margin: '0 auto' }} />
+              <h2 className="title-giant" style={{ fontSize: '2.4rem', marginBottom: '4px' }}>
                 {currentRound >= maxRounds ? "FINAL RESULTS" : "LEADERBOARD"}
               </h2>
-              <p className="subtitle mb-8" style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)' }}>
+              <p className="subtitle mb-6" style={{ fontSize: '1.1rem', color: 'hsla(0,0%,100%,0.8)' }}>
                 {currentRound >= maxRounds ? "The Ultimate Winner has been crowned!" : `Round ${currentRound} of ${maxRounds}`}
               </p>
 
-              <div className="flex-col mb-8" style={{ gap: '12px' }}>
+              <div className="leaderboard-list">
                 {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
-                  <div key={i} className="flex-row justify-between items-center"
+                  <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''}`}
                     onClick={() => {
                       setSelectedPlayerName(p.name);
                       if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
                     }}
-                    style={{ padding: '16px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px', border: i === 0 ? '2px solid var(--primary)' : 'none', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'background 0.2s ease' }}
-                    onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.1)'}
-                    onMouseLeave={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.05)'}
                   >
-                    {currentRound >= maxRounds && i === 0 && (
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)' }} />
-                    )}
+                    <div className="leaderboard-col-player">
+                      <div className={`rank-badge rank-badge-${i + 1}`}>
+                        {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      </div>
+                      <span className="player-row-name" title={p.name}>
+                        {p.name}
+                      </span>
+                    </div>
 
-                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'white', zIndex: 1 }}>
-                      {i === 0 && currentRound >= maxRounds && "👑 "}
-                      {i + 1}. {p.name}
-                    </span>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 1 }}>
+                    <div className="leaderboard-col-delta">
                       {roundDeltas[p.id || ''] !== undefined && roundDeltas[p.id || ''] > 0 && (
-                        <span style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '1.2rem' }}>
+                        <span className="delta-badge">
                           ↑ +{roundDeltas[p.id || '']}
                         </span>
                       )}
-                      <span className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900 }}>{p.score} pts</span>
+                    </div>
+
+                    <div className="leaderboard-col-score">
+                      <span className="score-val">{p.score}</span>
+                      <span className="score-unit">PTS</span>
                     </div>
                   </div>
                 ))}
@@ -1371,10 +1473,10 @@ function App() {
             </div>
 
             <div className="dashboard-sidebar justify-center">
-              <div className="glass-panel flex-col text-center" style={{ background: 'rgba(0,0,0,0.5)', padding: '32px' }}>
-                <h3 className="mb-4" style={{ fontSize: '1.5rem', fontWeight: 900, color: 'var(--primary)' }}>HOST CONTROLS</h3>
+              <div className="glass-panel flex-col text-center" style={{ background: 'rgba(0,0,0,0.5)', padding: '28px' }}>
+                <h3 className="mb-4" style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--primary)' }}>HOST CONTROLS</h3>
                 {currentRound < maxRounds && (
-                  <button className="btn-secondary w-full mb-4" onClick={() => setView('results')}>🔙 Show Gallery Results</button>
+                  <button className="btn-secondary w-full mb-3" onClick={() => setView('results')}>🔙 Show Round Winner</button>
                 )}
                 {currentRound >= maxRounds ? (
                   <button className="btn-secondary" style={{ border: '2px solid var(--primary)' }} onClick={() => {
@@ -1383,11 +1485,11 @@ function App() {
                   }}>🏆 Setup New Game</button>
                 ) : (
                   <>
-                    <button className="btn-secondary w-full mb-4" onClick={() => {
+                    <button className="btn-secondary w-full mb-3" onClick={() => {
                       setView('hostLobby');
                       if (ws.current) ws.current.send(JSON.stringify({ event: 'return_to_lobby' }));
                     }}>⚙️ Settings & Setup</button>
-                    <button className="btn-primary" style={{ padding: '24px', fontSize: '1.5rem' }} onClick={() => {
+                    <button className="btn-primary" style={{ padding: '20px', fontSize: '1.35rem' }} onClick={() => {
                       if (ws.current) ws.current.send(JSON.stringify({ event: 'start_round', mode: hostSelectedMode }));
                     }}>Start Next Round</button>
                   </>
@@ -1396,50 +1498,56 @@ function App() {
             </div>
           </div>
         ) : (
-          <div className="glass-panel flex-col w-full text-center animate-slide-up" style={{ position: 'relative' }}>
-            <Trophy size={48} className="text-primary mb-4 w-full" style={{ margin: '0 auto' }} />
-            <h2 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>
-              {currentRound >= maxRounds ? "FINAL RESULTS" : "LEADERBOARD"}
-            </h2>
-            <p className="subtitle mb-8" style={{ fontSize: '1.2rem', color: 'hsla(0,0%,100%,0.8)' }}>
-              {currentRound >= maxRounds ? "The Ultimate Winner has been crowned!" : `Round ${currentRound} of ${maxRounds}`}
-            </p>
+          <div className="player-leaderboard-container animate-slide-up">
+            <div className="glass-panel text-center" style={{ padding: '24px 18px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <Trophy size={36} className="text-primary" style={{ margin: '0 auto' }} />
+              <h2 className="title-giant" style={{ fontSize: '2rem', marginBottom: '2px' }}>
+                {currentRound >= maxRounds ? "FINAL RESULTS" : "LEADERBOARD"}
+              </h2>
+              <p className="subtitle" style={{ fontSize: '0.95rem', marginBottom: '12px' }}>
+                {currentRound >= maxRounds ? "The Ultimate Winner has been crowned!" : `Round ${currentRound} of ${maxRounds}`}
+              </p>
 
-            <div className="flex-col mb-8" style={{ gap: '12px' }}>
-              {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
-                <div key={i} className="flex-row justify-between items-center"
-                  onClick={() => {
-                    setSelectedPlayerName(p.name);
-                    if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
-                  }}
-                  style={{ padding: '16px', background: 'hsla(0,0%,100%,0.05)', borderRadius: '12px', border: i === 0 ? '2px solid var(--primary)' : 'none', position: 'relative', overflow: 'hidden', cursor: 'pointer', transition: 'background 0.2s ease' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.1)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'hsla(0,0%,100%,0.05)'}
-                >
-                  {currentRound >= maxRounds && i === 0 && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'linear-gradient(45deg, transparent, hsla(45,100%,50%,0.1), transparent)' }} />
-                  )}
-
-                  <span style={{ fontSize: '1.25rem', fontWeight: 800, color: i === 0 ? 'var(--primary)' : 'white', zIndex: 1 }}>
-                    {i === 0 && currentRound >= maxRounds && "👑 "}
-                    {i + 1}. {p.name}
-                  </span>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', zIndex: 1 }}>
-                    {roundDeltas[p.id || ''] !== undefined && roundDeltas[p.id || ''] > 0 && (
-                      <span style={{ color: '#4ade80', fontWeight: 'bold', fontSize: '1.2rem' }}>
-                        ↑ +{roundDeltas[p.id || '']}
+              <div className="leaderboard-list">
+                {[...players].sort((a, b) => b.score - a.score).map((p, i) => (
+                  <div key={i} className={`leaderboard-row ${i === 0 ? 'leaderboard-row-first' : ''}`}
+                    onClick={() => {
+                      setSelectedPlayerName(p.name);
+                      if (ws.current) ws.current.send(JSON.stringify({ event: 'get_player_history', player_id: p.id }));
+                    }}
+                  >
+                    <div className="leaderboard-col-player">
+                      <div className={`rank-badge rank-badge-${i + 1}`}>
+                        {i === 0 ? '👑' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}
+                      </div>
+                      <span className="player-row-name" title={p.name}>
+                        {p.name}
                       </span>
-                    )}
-                    <span className="text-primary" style={{ fontSize: '1.5rem', fontWeight: 900 }}>{p.score} pts</span>
+                    </div>
+
+                    <div className="leaderboard-col-delta">
+                      {roundDeltas[p.id || ''] !== undefined && roundDeltas[p.id || ''] > 0 && (
+                        <span className="delta-badge">
+                          ↑ +{roundDeltas[p.id || '']}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="leaderboard-col-score">
+                      <span className="score-val">{p.score}</span>
+                      <span className="score-unit">PTS</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
+
+              {currentRound < maxRounds && (
+                <button className="btn-secondary w-full mt-3" onClick={() => setView('results')}>
+                  🔙 Back to Results
+                </button>
+              )}
+              <p className="subtitle" style={{ margin: 0, fontSize: '0.85rem' }}>Waiting for Host...</p>
             </div>
-            {currentRound < maxRounds && (
-              <button className="btn-secondary w-full mb-4" onClick={() => setView('results')}>🔙 Back to Results</button>
-            )}
-            <p className="subtitle">Waiting for Host...</p>
           </div>
         )
       )}
