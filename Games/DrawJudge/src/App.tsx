@@ -330,6 +330,12 @@ function App() {
       setIsInviteLink(true);
       setView('join');
     }
+    if (params.get('test') === 'draw') {
+      setPrompt('A dancing astronaut on Mars');
+      setTimeLeft(60);
+      setIsHostUser(false);
+      setView('drawing');
+    }
   }, []);
 
   useEffect(() => {
@@ -871,7 +877,7 @@ function App() {
       {view === 'landing' && (
         <div className="landing-container">
           {/* Top Bar with Hub and Sound Toggle */}
-          <div className="game-top-bar" style={{ width: '100%', marginBottom: '8px' }}>
+          <div className="game-top-bar">
             <button 
               onClick={() => window.location.href = '/'}
               className="top-bar-btn icon-only"

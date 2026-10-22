@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Play, Heart, Bomb, ArrowRight, User, X, RefreshCw, Home, ArrowLeft, MessageSquare, Loader2 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
+import { sound } from './sound_service';
 import './App.css';
 
 // --- Types ---
@@ -256,16 +257,50 @@ function App() {
     viewRef.current = view;
   }, [view]);
 
-  // Parse room code from URL on load
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const roomParam = params.get('room');
     if (roomParam) {
       setRoomCode(roomParam.toUpperCase());
       setIsInviteLink(true);
-      // No need to set view to join manually as landing has the room input
     }
-  }, []);
+    if (params.get('test') === 'game') {
+      const mockTiles: Tile[] = Array.from({ length: 25 }, (_, i) => ({
+        id: i,
+        image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=150',
+        type: i === 0 ? 'assassin' : (i % 2 === 0 ? 'blue' : 'pink'),
+        revealed: i < 3
+      }));
+      setGameState({
+        room_code: 'TEST99',
+        host_id: 'host_123',
+        status: 'IN_PROGRESS',
+        turn_phase: 'WAITING_FOR_CLUE',
+        current_turn: 'blue',
+        players: {
+          [playerId]: { name: 'Alice', team: 'blue', role: 'player' },
+          p2: { name: 'Bob', team: 'pink', role: 'player' }
+        },
+        blue_captain: playerId,
+        pink_captain: 'p2',
+        board: mockTiles,
+        clue_word: null,
+        clue_number: 0,
+        guesses_remaining: 0,
+        scores: { blue: 2, pink: 1 },
+        max_tiles: { blue: 8, pink: 8 },
+        player_presence: {},
+        votes: {},
+        game_mode: 'classic',
+        starting_team_pref: 'blue',
+        team_times: { blue: 45, pink: 30 },
+        turn_started_at: Date.now() / 1000,
+        winner: null
+      });
+      setView('game');
+      setIsConnected(true);
+    }
+  }, [playerId]);
 
   // Live Timer Logic - MUST BE AT TOP
   const [elapsed, setElapsed] = useState(0);
@@ -385,8 +420,22 @@ function App() {
         else if (data.state.status === 'GAME_OVER') setView('game_over');
         else setView('game');
 
-        if (data.event === 'tile_revealed' && data.result.game_over) {
-          confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+        if (data.event === 'clue_submitted') {
+          sound.playChime();
+          navigator.vibrate?.([15, 30, 15]);
+        } else if (data.event === 'tile_revealed') {
+          if (data.result?.game_over) {
+            sound.playVictory();
+            navigator.vibrate?.([20, 60, 20, 60, 40]);
+            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+          } else {
+            sound.playPop();
+            navigator.vibrate?.([10]);
+          }
+        } else if (data.event === 'turn_ended') {
+          sound.playTick();
+        } else if (data.event === 'game_started') {
+          sound.playChime();
         }
       } else if (data.event === 'room_update') {
         setGameState(prev => {
@@ -406,6 +455,7 @@ function App() {
 
   // --- Handlers ---
   const handleCreateRoom = async () => {
+    navigator.vibrate?.([8]);
     console.log("DEBUG: handleCreateRoom clicked");
     setIsCreatingRoom(true);
     setCreateRoomCountdown(60);
@@ -448,11 +498,14 @@ function App() {
 
   const handleJoinRoom = () => {
     if (!roomCode || !playerName) return;
+    navigator.vibrate?.([8]);
     safeSetItem('cc_player_name', playerName);
     connectWebSocket(roomCode);
   };
 
   const handleSelectTeam = (team: 'blue' | 'pink' | null) => {
+    sound.playPop();
+    navigator.vibrate?.([8]);
     ws.current?.send(JSON.stringify({ event: 'update_team', team }));
   };
 
@@ -473,22 +526,31 @@ function App() {
       return;
     }
 
+    sound.playChime();
+    navigator.vibrate?.([15, 30, 15]);
     ws.current?.send(JSON.stringify({ event: 'start_game', starting_team: 'blue' }));
   };
 
   const handleSubmitClue = (word: string, number: number) => {
+    sound.playChime();
+    navigator.vibrate?.([15, 30, 15]);
     ws.current?.send(JSON.stringify({ event: 'submit_clue', word, number }));
   };
 
   const handleRevealTile = (tileId: number) => {
+    sound.playPop();
+    navigator.vibrate?.([12]);
     ws.current?.send(JSON.stringify({ event: 'reveal_tile', tile_id: tileId }));
   };
 
   const handleVoteTile = (tileId: number) => {
+    sound.playPop();
+    navigator.vibrate?.([8]);
     ws.current?.send(JSON.stringify({ event: 'vote_tile', tile_id: tileId }));
   };
 
   const handleRerollTile = (tileId: number) => {
+    sound.playPop();
     ws.current?.send(JSON.stringify({ event: 'reroll_tile', tile_id: tileId }));
     // Optimistically clear error while waiting for sync
     setErrorTiles(prev => {
@@ -499,22 +561,28 @@ function App() {
   };
 
   const handleAssignCaptain = (player_id: string, team: 'blue' | 'pink') => {
+    sound.playPop();
+    navigator.vibrate?.([8]);
     ws.current?.send(JSON.stringify({ event: 'assign_captain', player_id, team }));
   };
 
   const handleSetMode = (mode: string) => {
+    sound.playPop();
     ws.current?.send(JSON.stringify({ event: 'set_game_mode', mode }));
   };
 
   const handleSetStartingTeam = (team: string) => {
+    sound.playPop();
     ws.current?.send(JSON.stringify({ event: 'set_starting_team', team }));
   };
 
   const handleEndTurn = () => {
+    sound.playTick();
     ws.current?.send(JSON.stringify({ event: 'end_turn' }));
   };
 
   const handleResetGame = () => {
+    sound.playChime();
     ws.current?.send(JSON.stringify({ event: 'reset_game' }));
   };
 
@@ -766,56 +834,56 @@ function App() {
           </button>
         </div>
 
-        <div className="text-center mb-2">
-          <h1 className="title-giant" style={{ fontSize: '2.5rem', marginBottom: '4px' }}>CodePic</h1>
-          <p className="subtitle" style={{ marginBottom: '12px', fontSize: '1rem' }}>Picture Wars: Blue vs Pink</p>
+        <div className="text-center mb-1">
+          <h1 className="title-giant" style={{ fontSize: 'clamp(1.9rem, 4.5vw, 2.3rem)', marginBottom: '2px' }}>CodePic</h1>
+          <p className="subtitle" style={{ marginBottom: '8px', fontSize: '0.88rem' }}>Picture Wars: Blue vs Pink</p>
         </div>
 
         {/* Host Recovery Banner */}
         {savedHostSession && (
-          <div className="host-recovery-banner">
+          <div className="host-recovery-banner" style={{ marginBottom: '8px' }}>
             <div className="host-recovery-content">
               <span className="host-recovery-icon">👑</span>
               <div>
-                <div className="host-recovery-title">Active Host Session Found</div>
-                <div className="host-recovery-desc">Room Code: <strong style={{ color: '#ffd700', fontSize: '1.05rem' }}>{savedHostSession.roomCode}</strong></div>
+                <div className="host-recovery-title" style={{ fontSize: '0.85rem' }}>Active Host Session Found</div>
+                <div className="host-recovery-desc" style={{ fontSize: '0.8rem' }}>Room Code: <strong style={{ color: '#ffd700', fontSize: '0.95rem' }}>{savedHostSession.roomCode}</strong></div>
               </div>
             </div>
             <div className="host-recovery-actions">
-              <button className="btn btn-primary" onClick={handleResumeHostSession}>
+              <button className="btn btn-primary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={handleResumeHostSession}>
                 Resume Hosting
               </button>
-              <button className="btn btn-secondary" onClick={handleDismissHostSession}>
+              <button className="btn btn-secondary" style={{ padding: '6px 10px', fontSize: '0.85rem' }} onClick={handleDismissHostSession}>
                 Dismiss
               </button>
             </div>
           </div>
         )}
 
-        <div className="glass-panel" style={{ maxWidth: '440px', width: '100%', padding: '1.5rem 1.25rem' }}>
+        <div className="glass-panel" style={{ maxWidth: '420px', width: '100%', padding: '1rem' }}>
           <input
-            className="subtitle"
-            style={{ width: '100%', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '1.05rem', marginBottom: '0.85rem' }}
+            className="input-field"
+            style={{ marginBottom: '0.6rem', padding: '0.65rem 0.9rem', fontSize: '0.95rem' }}
             placeholder="Your Name"
             value={playerName}
             onChange={e => setPlayerName(e.target.value)}
           />
           {!isInviteLink && (
-            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '0.85rem', padding: '0.85rem 1.25rem', fontSize: '1.05rem' }} onClick={handleCreateRoom}>
-              <Play size={20} /> Create Room
+            <button className="btn btn-primary" style={{ width: '100%', marginBottom: '0.6rem', padding: '0.7rem 1rem', fontSize: '0.98rem' }} onClick={handleCreateRoom}>
+              <Play size={18} /> Create Room
             </button>
           )}
-          <div className="input-group" style={{ marginBottom: '0.85rem', gap: '10px' }}>
+          <div className="input-group" style={{ marginBottom: '0.6rem', gap: '8px' }}>
             <input
-              className="subtitle"
-              style={{ flex: 1, padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: 'white', margin: 0, fontSize: '1.05rem' }}
+              className="input-field"
+              style={{ flex: 1, margin: 0, padding: '0.65rem 0.9rem', fontSize: '0.95rem' }}
               placeholder="Room Code"
               value={roomCode}
               onChange={e => setRoomCode(e.target.value.toUpperCase())}
             />
-            <button className="btn btn-secondary" style={{ padding: '0.85rem 1.5rem', fontSize: '1.05rem' }} onClick={handleJoinRoom}>Join</button>
+            <button className="btn btn-secondary" style={{ padding: '0.7rem 1.25rem', fontSize: '0.98rem' }} onClick={handleJoinRoom}>Join</button>
           </div>
-          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.1)', marginTop: '4px', padding: '0.85rem 1.25rem', fontSize: '1.05rem' }}>
+          <button className="btn btn-secondary" onClick={() => { setTutorialStep(0); setShowTutorial(true); }} style={{ width: '100%', background: 'rgba(255,255,255,0.08)', marginTop: '2px', padding: '0.65rem 1rem', fontSize: '0.92rem' }}>
             ❓ How to Play
           </button>
         </div>

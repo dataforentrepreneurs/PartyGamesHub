@@ -173,7 +173,7 @@ function App() {
           <div className="splash-video-container">
             <video
               ref={videoRef}
-              src="./logo_loading_video.mp4"
+              src="./brand_video.mp4"
               autoPlay
               playsInline
               muted={isMuted}
