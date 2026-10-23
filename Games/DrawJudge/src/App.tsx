@@ -417,13 +417,8 @@ function App() {
       setPlayers(mockPlayers);
       setResults(mockResults);
       setAllPlayerHistory(mockHistory);
-      if (isWinner && isHost) {
-        setSelectedPlayerHistory(mockHistory[playerId]);
-        setSelectedPlayerName('Alice Walker');
-      } else {
-        setSelectedPlayerHistory(null);
-        setSelectedPlayerName('');
-      }
+      setSelectedPlayerHistory(null);
+      setSelectedPlayerName('');
       setRoundSummary("Alice conquered the cosmos with an electrifying dancing astronaut!");
       setWinnerExplanation("Remarkable creativity and attention to detail that won the AI judge's heart.");
       setIsHostUser(Boolean(isHost));
@@ -1954,7 +1949,7 @@ function App() {
       )}
 
       {/* History Modal Overlay for inspecting any player's designs or the Grand Recap */}
-      {selectedPlayerHistory && (
+      {selectedPlayerHistory && (!isHostUser || hostShowAllHistory || currentRound < maxRounds) && (
         <div className="player-history-modal-overlay animate-fade-in" onClick={() => setSelectedPlayerHistory(null)}>
           <div className="player-history-modal-container animate-slide-up" onClick={(e) => e.stopPropagation()}>
             
