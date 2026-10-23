@@ -265,9 +265,36 @@ function App() {
       setIsInviteLink(true);
     }
     if (params.get('test') === 'game') {
+      const samplePhotos = [
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=250',
+        'https://images.unsplash.com/photo-1517976487508-319760777583?w=250',
+        'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=250',
+        'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=250',
+        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=250',
+        'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=250',
+        'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=250',
+        'https://images.unsplash.com/photo-1518770660439-4636190af475?w=250',
+        'https://images.unsplash.com/photo-1552053831-71594a27632d?w=250',
+        'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=250',
+        'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=250',
+        'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=250',
+        'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=250',
+        'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=250',
+        'https://images.unsplash.com/photo-1488590528505-98d2b5aba04b?w=250',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=250',
+        'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=250',
+        'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=250',
+        'https://images.unsplash.com/photo-1533450718592-29d45635f0a9?w=250',
+        'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=250',
+        'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=250',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=250',
+        'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=250',
+        'https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?w=250',
+        'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?w=250',
+      ];
       const mockTiles: Tile[] = Array.from({ length: 25 }, (_, i) => ({
         id: i,
-        image: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=150',
+        image: samplePhotos[i % samplePhotos.length],
         type: i === 0 ? 'assassin' : (i % 2 === 0 ? 'blue' : 'pink'),
         revealed: i < 3
       }));
@@ -534,13 +561,38 @@ function App() {
   const handleSubmitClue = (word: string, number: number) => {
     sound.playChime();
     navigator.vibrate?.([15, 30, 15]);
-    ws.current?.send(JSON.stringify({ event: 'submit_clue', word, number }));
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ event: 'submit_clue', word, number }));
+    } else {
+      setGameState(prev => prev ? {
+        ...prev,
+        turn_phase: 'GUESSING',
+        clue_word: word.toUpperCase(),
+        clue_number: number,
+        guesses_remaining: number + 1
+      } : null);
+    }
   };
 
   const handleRevealTile = (tileId: number) => {
     sound.playPop();
     navigator.vibrate?.([12]);
-    ws.current?.send(JSON.stringify({ event: 'reveal_tile', tile_id: tileId }));
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ event: 'reveal_tile', tile_id: tileId }));
+    } else {
+      setGameState(prev => {
+        if (!prev) return null;
+        return {
+          ...prev,
+          board: prev.board.map(t => t.id === tileId ? { ...t, revealed: true } : t),
+          scores: {
+            ...prev.scores,
+            blue: prev.scores.blue + 1
+          },
+          guesses_remaining: Math.max(0, prev.guesses_remaining - 1)
+        };
+      });
+    }
   };
 
   const handleVoteTile = (tileId: number) => {
