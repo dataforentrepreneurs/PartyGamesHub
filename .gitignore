@@ -21,3 +21,5 @@ brain/
 *.log
 scratch_video/
 *.mp4
+*.aab
+*.apk
