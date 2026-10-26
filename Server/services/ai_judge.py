@@ -165,20 +165,20 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
     #     "gemini-3.1-pro"
     # ]
 
-    models_to_try = [
-        # Check environment variable first
-        os.environ.get("GEMINI_MODEL", "gemini-2.5-flash"),
-       
-        # 2026 Stable Models (GA)
-        "gemini-2.5-flash",          # Best balance of speed/cost for party games
-        "gemini-2.5-pro",            # High intelligence for complex drawings
+    preferred_model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    candidate_models = [
+        preferred_model,
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-2.5-pro",
         "gemini-3-flash",
-       
-        # 2026 Newest Previews (Require -preview suffix)
         "gemini-3.1-flash-lite-preview",
         "gemini-3.1-pro-preview",
-        "gemini-3-flash-preview"
+        "gemini-3-flash-preview",
     ]
+    # Deduplicate while preserving order
+    models_to_try = list(dict.fromkeys(candidate_models))
     
     response = None
     last_error = ""
@@ -202,6 +202,10 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
         except Exception as e:
             last_error = str(e) or type(e).__name__
             print(f"Model {model_name} failed: {last_error}")
+            # If account is out of credits (402) or key is invalid, subsequent models will fail identically
+            if "402" in last_error or "prepayment" in last_error.lower() or "API_KEY_INVALID" in last_error:
+                print("Billing/Account error detected. Skipping subsequent model retries.")
+                break
             continue
 
     latency = float(time.perf_counter() - start_time)
@@ -275,22 +279,35 @@ Return STRICT JSON ONLY. Do not wrap in markdown blocks. Format exactly like thi
 
 def _fallback_all_to_mock(submissions: Dict[str, dict], prompt: str, error_msg: str, latency: float = 0.0) -> BatchEvaluationResult:
     results = []
+    is_production = os.environ.get("RENDER") is not None or os.environ.get("ENVIRONMENT") == "production"
+
     for pid in submissions.keys():
         mock_res = get_mock_score(pid, prompt)
-        if "No Gemini API key found" in error_msg:
-            mock_res.comment = f"[DEV: NO API KEY] {mock_res.comment}"
-        else:
-            mock_res.comment = f"[DEV: AI ERROR - {error_msg}] {mock_res.comment}"
+        # In production, never expose internal raw API exceptions/credentials to players in game comments
+        if not is_production:
+            if "No Gemini API key found" in error_msg:
+                mock_res.comment = f"[DEV: NO API KEY] {mock_res.comment}"
+            elif "402" in error_msg or "prepayment" in error_msg.lower():
+                mock_res.comment = f"[DEV: PREPAY CREDITS DEPLETED (402)] {mock_res.comment}"
+            else:
+                short_err = error_msg.split("\n")[0][:80]
+                mock_res.comment = f"[DEV: AI ERROR - {short_err}] {mock_res.comment}"
         results.append(mock_res)
         
     results.sort(key=lambda x: x.total_score, reverse=True)
     
-    mock_reason = "No API Key provided" if "API key" in error_msg else "API Error"
+    if is_production:
+        round_summary = "The AI judge took a coffee break! The guest judge stepped in with some wild scores."
+        winner_explanation = "The winner won by unanimous decision of the backup panel!"
+    else:
+        mock_reason = "No API Key provided" if "API key" in error_msg else ("Prepay Credits Depleted (402)" if "402" in error_msg else "API Error")
+        round_summary = f"The judge was asleep ({mock_reason}). Everyone gets arbitrary mock scores!"
+        winner_explanation = "The winner probably bribed the mock AI judge."
     
     return BatchEvaluationResult(
         results=results,
-        round_summary=f"The judge was asleep ({mock_reason}). Everyone gets arbitrary mock scores!",
-        winner_explanation="The winner probably bribed the mock AI judge.",
+        round_summary=round_summary,
+        winner_explanation=winner_explanation,
         ai_latency_seconds=latency
     )
 
